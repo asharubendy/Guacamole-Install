@@ -19,6 +19,7 @@ clear
 
 export PATH=/bin:/usr/bin:/usr/local/bin
 TODAY=$(date +%Y-%m-%d)
+# Below variables are automatically updated by the 1-setup.sh script with the respective values given at install (manually update if blank)
 MYSQL_HOST=
 MYSQL_PORT=
 GUAC_USER=
@@ -44,7 +45,7 @@ mysqldump -h ${MYSQL_HOST} \
     ${GUAC_DB} \
     --single-transaction --quick --lock-tables=false >${DB_BACKUP_DIR}${GUAC_DB}-${TODAY}.sql
 SQLFILE=${DB_BACKUP_DIR}${GUAC_DB}-${TODAY}.sql
-if [ $? -ne 0 ]; then
+if [[ $? -ne 0 ]]; then
     echo -e "${LRED}Backup failed.${GREY}" 1>&2
     exit 1
 else
@@ -53,7 +54,7 @@ else
 fi
 gzip -f ${SQLFILE}
 # Error check and email alerts
-if [ $? -ne 0 ]; then
+if [[ $? -ne 0 ]]; then
     echo -e "${LRED}Backup failed.${GREY}" 1>&2
     exit 1
 else

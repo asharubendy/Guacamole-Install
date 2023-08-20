@@ -1,10 +1,13 @@
 #!/bin/bash
 #######################################################################################################################
-# Harden Guacd <-> Guac client traffic in SSL wrapper
+# Harden Guacd <-> Guac client traffic in TLS wrapper
 # For Ubuntu / Debian / Raspbian
 # David Harrop
 # April 2023
 #######################################################################################################################
+
+# To delete and reissue a new cert
+# sudo keytool -delete -alias guacd -noprompt -cacerts -storepass changeit -file guacd.crt
 
 # Prepare text output colours
 GREY='\033[0;37m'
@@ -15,24 +18,29 @@ LGREEN='\033[0;92m'
 LYELLOW='\033[0;93m'
 NC='\033[0m' #No Colour
 
+# Check if user is root or sudo
+if ! [[ $(id -u) = 0 ]]; then
+    echo
+    echo -e "${LRED}Please run this script as sudo or root${NC}" 1>&2
+    exit 1
+fi
+
+TOMCAT_VERSION=$(ls /etc/ | grep tomcat)
+RSA_KEY_LENGTH=2048
+# Below variables are automatically updated by the 1-setup.sh script with the respective values given at install (manually update if blank)
 CERT_COUNTRY=
 CERT_STATE=
 CERT_LOCATION=
 CERT_ORG=
 CERT_OU=
+CERT_DAYS=
 
 clear
 
-if ! [ $(id -u) = 0 ]; then
-    echo
-    echo -e "${LGREEN}Please run this script as sudo or root${NC}" 1>&2
-    exit 1
-fi
-
-# Create the special directory for guacd ssl certfifacte and key.
-sudo mkdir /etc/guacamole/ssl
+# Create the special directory for guacd tls certificate and key.
+mkdir -p /etc/guacamole/ssl
 echo
-cat <<EOF | tee -a cert_attributes.txt
+cat <<EOF | tee cert_attributes.txt
 [req]
 distinguished_name  = req_distinguished_name
 x509_extensions     = v3_req
@@ -57,12 +65,13 @@ DNS.1               = localhost
 IP.1                = 127.0.0.1
 EOF
 
-# Create the self signining request, certificate & key
-sudo openssl req -x509 -nodes -days 36500 -newkey rsa:2048 -keyout /etc/guacamole/ssl/guacd.key -out /etc/guacamole/ssl/guacd.crt -config cert_attributes.txt
+# Create the self signing request, certificate & key
+openssl req -x509 -nodes -days $CERT_DAYS -newkey rsa:$RSA_KEY_LENGTH -keyout /etc/guacamole/ssl/guacd.key -out /etc/guacamole/ssl/guacd.crt -config cert_attributes.txt
 rm -f cert_attributes.txt
 
-# Point Gaucamole config file to certificate any key
-sudo cat <<EOF | sudo tee /etc/guacamole/guacd.conf
+# Point Guacamole config file to certificate and key
+cp /etc/guacamole/guacd.conf /etc/guacamole/guacd.conf.bak
+cat <<EOF | sudo tee /etc/guacamole/guacd.conf
 [server]
 bind_host = 127.0.0.1
 bind_port = 4822
@@ -71,22 +80,24 @@ server_certificate = /etc/guacamole/ssl/guacd.crt
 server_key = /etc/guacamole/ssl/guacd.key
 EOF
 
-# Enable SSL backend
-sudo cat <<EOF | sudo tee -a /etc/guacamole/guacamole.properties
+# Enable TLS backend
+cat <<EOF | sudo tee -a /etc/guacamole/guacamole.properties
 guacd-ssl: true
 EOF
 
 # Fix required permissions as guacd only runs as daemon
-sudo chown daemon:daemon /etc/guacamole/ssl
-sudo chown daemon:daemon /etc/guacamole/ssl/guacd.key
-sudo chown daemon:daemon /etc/guacamole/ssl/guacd.crt
-sudo chmod 644 /etc/guacamole/ssl/guacd.crt
-sudo chmod 644 /etc/guacamole/ssl/guacd.key
+chown daemon:daemon /etc/guacamole/ssl
+chown daemon:daemon /etc/guacamole/ssl/guacd.key
+chown daemon:daemon /etc/guacamole/ssl/guacd.crt
+chmod 644 /etc/guacamole/ssl/guacd.crt
+chmod 644 /etc/guacamole/ssl/guacd.key
 
 # Add the new certificate into the Java Runtime certificate store and set JRE to trust it.
 cd /etc/guacamole/ssl
-sudo keytool -importcert -alias guacd -noprompt -cacerts -storepass changeit -file guacd.crt
-sudo systemctl restart guacd
+keytool -importcert -alias guacd -noprompt -cacerts -storepass changeit -file guacd.crt
+
+systemctl restart guacd
+systemctl restart ${TOMCAT_VERSION}
 
 echo
 echo "Done!"

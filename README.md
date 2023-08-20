@@ -1,102 +1,115 @@
-# **Guacamole 1.5.3 VDI / Jump Server Appliance Build Script**
+# Guacamole 1.5.3 VDI/Jump Server Appliance Build Script
 
-A menu based build & install script for Guacamole 1.5.3 with support for TLS reverse proxy, AD integration, multi-factor authentication and further security hardening.
+<img src="https://github.githubassets.com/images/icons/emoji/sparkles.png" width="35"> This suite of build scripts makes setting up Guacamole a breeze. Its got installer support for TLS reverse proxy, Active Directory integration, multi-factor authentication, Quick Connect & History Recording Storage UI enhancements, dark mode and custom UI templates, auto database backup, O365 email alerts, internal daemon security hardening options and even a fail2ban policy for defence against brute force attacks. There's also code in here to get you up and running with an enterprise deployment approach near identical to [Amazon's Guacamole Bastion Cluster](http://netcubed-ami.s3-website-us-east-1.amazonaws.com/guaws/v2.3.1/cluster/), if that's your thing!
 
-### **Automatic build, install & config script**
+## Automatic Installation
 
-To install Guacamole, paste the following command into your terminal **(do not run as sudo)**:
+<img src="https://github.githubassets.com/images/icons/emoji/rocket.png" width="35"> To start building your Guacamole appliance, paste the below link into a terminal and just follow the prompts **(no need for sudo, but the user must be a member of the sudo group)**:
 
-```
+```shell
 wget https://raw.githubusercontent.com/itiligent/Guacamole-Install/main/1-setup.sh && chmod +x 1-setup.sh && ./1-setup.sh
 ```
 
-## **Prerequisites**
- ### PLEASE NOTE: DEBIAN 12 & Tomcat 10 NOT COMPATIBLE - SEE ISSUE #10
+## Prerequisites (Yes! Debian 12 is now supported!)
 
-- **Ubuntu 18.04 - 22.x / Debian 11 & 10 / Raspbian Buster or Bullseye**
-  - *(if using OS vendor cloud images - you must use **stable releases of the above OS variants.**  Daily cloud image builds are akin to rolling releases and may contain as yet unsupported updates that break Guacamole!)*
-- Minimum 8GB RAM and 40GB HDD
-- Public or private DNS entries that match the default route interface IP address (required for TLS)
-- Incoming access on TCP ports 22, 80, and 443
-- The user executing the wget installer script **must be a member of the sudo group**
+<img src="https://github.githubassets.com/images/icons/emoji/lock.png" width="35"> **Before diving in, make sure you have:**
 
-## **Setup Menu Flow**
+- **A compatible OS:**
+    - **Debian 12, 11 or 10**
+    - **Ubuntu 23.04, 22.04, 20.04 & 18.04**
+    - **Raspbian Buster & Bullseye**
+    - **Official vendor cloud images equivalent to the above.**
+- Minimum 8GB RAM and 40GB HDD.
+- DNS entries matching your default appliance network interface IP (essential for TLS).
+- Open TCP ports: 22, 80, and 443.
 
-### **1. Confim the system hostname & local domain suffix**
-- Change or keep the current hostname and local DNS suffix
+## Installation Menu
 
-### **2. Select a MySQL instance type and security baseline**
+<img src="https://github.githubassets.com/images/icons/emoji/wrench.png" width="35"> **The main script guides you through the installation process in the following steps:**
 
-- Install a new local MySQL instance, or choose an existing/remote MySQL instance. 
-  - *Optionally add MySQL **mysql_secure_installation** settings to the selected MySQL instance*
-  - *Optionally provide an email address for backup messages and alerts*
+1. Confirm your system hostname and local DNS domain suffix. (Must be consistent for TLS proxy)
+2. Choose a locally installed or remote MySQL instance, set database security preferences.
+3. Pick an authentication extension: DUO, TOTP, LDAP, or none.
+4. Select optional console features: Quick Connect & History Recorded Storage UI integrations.
+5. Decide on the Guacamole front end: Nginx reverse proxy (http or https) or keep the native Guacamole interface
+  - If you opt to install Nginx with self signed TLS:
+    - New server and client browser certificates are backed up to `$HOME/guac-setup/tls-certs/date-time`
+    - Pay attention to on-screen instructions for client certificate import (no more pesky browser warnings). 
 
-### **3. Pick an authentication extension**
+## Managing self signed TLS certs with Nginx (the easy way!)
 
-- **DUO, TOTP, LDAP or None**  
-  - *Simultaneous TOTP and DUO not possible, but LDAP with TOTP is ok.*
-
-### **4. Choose the Guacamole front end**
-
-- **Install Nginx reverse Proxy?** [y/n]
-     - No:  Keep the Guacamole native front end & url http://server.local:8080/guacamole
-       - *Sub option: Change Guacamole's default url to http root? Yes = http://server.local:8080*
-     - Yes: Prompts for a reverse proxy local dns name (this can be different to the hostname)
+   - **To renew certificates, or to change the reverse proxy local dns name and/or IP address:** 
+     - Just re-run ` 4a-install-tls-self-signed-nginx.sh`as many times as you like (accompanying server and browser client certs will also be updated). Look in the script comments for command line options.
    
-- **Install Nginx reverse proxy with a self-signed SSL certificate?** [y/n]
-  - No: Installs Nginx as **http** reverse proxy with the given local dns name e.g. http://server.local
-  - Yes: Installs Nginx as **https** reverse proxy with the given local dns name e.g  https://server.local 
-     - *Auto configures Nginx with a self signed TLS certificate and http redirect*
-     - *Auto generates Windows & Linux client browser certificates*
 
- - **Install Nginx reverse proxy with a Let's Encrypt certificate?** [y/n] 
-    - Yes: = Prompts for a webmaster email & public reverse proxy dns name e.g https://your-public-site.com
-      - *Installs Nginx with the given public dns name*
-      - *Auto configures Nginx with a new LetsEncrypt certificate and http redirect*
-      - *Auto configures certificate notifications to the webmaster email*
-      - *Auto schedules recurring certificate renewals* 
+## Active Directory Integration
 
-## **Optional post install hardening**
+<img src="https://github.githubassets.com/images/icons/emoji/key.png" width="35"> **Need help with Active Directory authentication?** Check [here](https://github.com/itiligent/Guacamole-Install/blob/main/ACTIVE-DIRECTORY-HOW-TO.md).
 
-The installer downloads additional scripts to manually run:
-- `add-fail2ban.sh` - Adds a conservative fail2ban lockdown policy to Guacamole & whitelists local LAN
-- `add-ssl-guac-gaucd.sh` - Encrypts internal traffic between Guacamole application and Guacd daemon with TLS
-- `add-auth-ldap.sh` - Template script for integrating with Active Directory (See ACTIVE-DIRECTORY-HOW-TO.md)
-- `add-smtp-relay-o365.sh` - Template script for email alerts via MSO65 (SMTP auth, requires BYO app password)
+## Customise & Brand Your Guacamole Theme
 
-## **Active Directory integration**
+<img src="https://github.githubassets.com/images/icons/emoji/art.png" width="35"> **Want to give Guacamole your personal touch? Follow the theme and branding instructions** [here](https://github.com/itiligent/Guacamole-Install/tree/main/custom-theme-builder).
 
-See Active Directory authentication instructions [here](https://github.com/itiligent/Guacamole-Install/blob/main/ACTIVE-DIRECTORY-HOW-TO.md)
+## Installation Instructions
+
+<img src="https://github.githubassets.com/images/icons/emoji/unicode/2699.png" width="35"> 
+
+### **Paste and the wget autorun link, thats it! *But if* you want to make Guacamole your own and customise...**
+**Exit `1-setup.sh` at the first prompt**. All the configurable options can be found at the start of `1-setup.sh`. Certain combinations of edits will even produce an unattended install!
+
+**Other useful install notes:**
+- **Caution: Be aware that running the auto-run link again re-downloads the suite of scripts and will overwrite your changes. You must run setup locally after editing the setup script.** (Also be sure to comment out the download links in the setup script for any other scripts you want to edit, but there should be little need to touch these.)
+- Many of the scripts in the suite are **automatically adjusted with your chosen installation settings** to form a matched & transportable set. This allows you to add extra features after installation whilst avoiding mismatches with the original install.
+- Nginx is automatically configured to use TLS 1.2 or above (so really old browser versions may not work.)
+- A daily MySQL backup job will be automatically configured under the script owner's crontab.
+- **Security info:** The Quick Connect and History Recorded Storage options bring a few security implications; so be aware of potential risks in your particular environment.
+
+**For the more security minded, there's several post-install hardening script options available:**
+
+- `add-fail2ban.sh`: Adds a lockdown policy for Guacamole to guard against brute force attacks.
+- `add-tls-guac-daemon.sh`: Wraps internal server daemon <--> guac application traffic in TLS.
+- `add-auth-ldap.sh`: A template script for Active Directory integration.
+- `add-smtp-relay-o365.sh`: A template script for email alerts integrated with MSO65 (BYO app password).
 
 
-## **Installation notes**
+## Upgrading Guacamole
 
-To create a custom or unattended setup, follow these steps:
-1. From a terminal session, change to your home directory then paste and run the above wget setup link.
-2. Exit the `1-setup.sh` script at the first prompt. (At this point only the scripts have downloaded).
-3. Customise the installation variables in the "Silent setup options" section of `1-setup.sh` as appropriate. 
-    - *Note that script variables with an actual value (e.g. `VARIABLE="value"`) will not prompt during the interactive setup. This means that with the right combination of script variable inputs, it is possible to mass deploy full Guacamole appliances with zero touch.*
-4. **After setting your custom variable values in `1-setup.sh`, you must now run the modified script saved locally with `./1-setup.sh` Beware: If you run the setup script once again via the wget link you will overwrite all your changes!**
-      - *There should be no need to customise any scripts other than `1-setup.sh` as all install options are managed in this parent script.*
-      - *If you must make changes to any other downloaded scripts, you must also comment out their corresponding wget lines in the "Download GitHub Setup" section at the top of `1-setup.sh` to prevent a re-download and overwrite when re-running the setup.* 
-      - *Be aware that all optional (manually run) `add-xxxx.sh` scripts are dynamically updated during the installation with variables selected at install. Editing anything other than `1-setup.sh` may break this functionality.*
-6. If the self signed SSL option is selected, client TLS certificates are saved to `$DOWNLOAD_DIR/guac-setup`.
-7. If any TLS option is selected, Nginx is configured to only support connections using TLS 1.2 or above.
+<img src="https://github.githubassets.com/images/icons/emoji/globe_with_meridians.png" width="35"> To upgrade Guacamole, edit `upgrade-guac.sh` to relfect the latest versions of Guacamole and MySQL connector/J before running it. This script will also automatically update the installed extensions.
 
-## **Setup download manifest**
+## Enterprise Scale Out & High Availability 
 
-The setup command mentioned above downloads the following items into the `$DOWNLOAD_DIR/guac-setup` directory:
+<img src="https://github.githubassets.com/images/icons/emoji/unicode/1f454.png" width="35"> For Enterprise deployments, did you know that Guacamole can be run in a load balanced farm? To achieve this, the database, application and front end components are usually **split into 2 or 3 layers.** (VLANs & firewalls between the layers helps with security too.) See [here](https://github.com/itiligent/Guacamole-Install/tree/main/guac-enterprise-build) for how to get started.
 
-- `1-setup.sh`: The parent install script itself
-- `2-install-guacamole.sh`: Guacamole installation script (inspired by [MysticRyuujin/guac-install](https://github.com/MysticRyuujin/guac-install))
-- `3-install-nginx.sh`: Installs Nginx & auto-configures a front-end reverse proxy for Guacamole (optional)
-- `4a-install-ssl-self-signed-nginx.sh`: Configures self-signed TLS certificate for Nginx proxy (optional)
-- `4b-install-ssl-letsencrypt-nginx.sh`: Installs & configures Let's Encrypt for Nginx proxy (optional)
-- `add-auth-duo.sh`: Adds the Duo MFA extension if not selected during install (optional)
-- `add-auth-ldap.sh`: Adds the Active Directory extension and setup template if not selected at install (optional)
-- `add-auth-totp.sh`: Adds the TOTP MFA extension if not selected at install (optional)
-- `add-ssl-guac-gaucd.sh`: A hardening script to add a TLS wrapper between the guacd daemon and Guacamole client application traffic (optional, consider extra performance impact mitigations)
-- `add-fail2ban.sh`: Adds a fail2ban policy (with local subnet override) to secure Guacamole against external brute force attacks
-- `add-smtp-relay-o365.sh`: Sets up a TLS/SMTP auth relay with O365 for monitoring & alerts (BYO app password)
-- `backup-guacamole.sh`: A simple MySQL Guacamole backup script
-- `branding.jar`: An example template for a customised Guacamole login screen. The extension allows some measure of branding the user interface (or delete to keep the default interface). This is a version of https://github.com/Zer0CoolX/guacamole-customize-loginscreen-extension but with further tweaks to additionally support custom browser tab favicons. Much more extensive branding is possible via CSS inside this extension.
+Even for home lab use, a simple benefit of using a separate MySQL backend means you can test and break things with your Guacamole server whilst keeping all your connection profiles intact. Just rebuild a fresh server and immediately all your connection profiles and settings are right there!
+
+- **For the DATABASE layer:** Find the included `install-mysql-backend-only.sh` to install a standalone instance of the Guacamole MySQL database for your backend.
+- **For the APPLICATION layer:** Simply use the main setup script to build as many application servers as you like, just use the installer to point these to the backend database, making sure to **say no to both the "Install MySQL locally" option and any Nginx install options**.
+- **For the Front end**: There are so many choices available that are already very well documented. You could even take the (portable) Nginx scripts to build a separate TLS front end layer. Be aware that [HA Proxy](https://www.haproxy.org/) generally provides far superior session affinity and persistence under load balanced conditions [when compared to Open Source Nginx](https://www.nginx.com/products/nginx/compare-models/) as only Nginx Plus subscribers get all the proper load balancing stuff!)
+
+
+### Installer script download manifest
+
+
+
+<img src="https://github.githubassets.com/images/icons/emoji/package.png" width="35"> The autorun link downloads these repo files into `$HOME/guac-setup`:
+
+For a level of Independence away from the main installer (and flexible server life-cycles), most of the below scripts can be run to include extra features not added at original install (where noted).
+
+- `1-setup.sh`: The installation script.
+- `2-install-guacamole.sh`: Guacamole main source build installation script.
+- `3-install-nginx.sh`: Installs Nginx for reverse proxy if not added at install.
+- `4a-install-tls-self-signed-nginx.sh`: Configures or updates self-signed TLS for Nginx if not added at install.
+- `4b-install-tls-letsencrypt-nginx.sh`: Installs Let's Encrypt for Nginx if not added at install
+- `add-auth-duo.sh`: Installs Duo MFA extension if not added at install.
+- `add-auth-ldap.sh`: Installs Active Directory extension if not added at install.
+- `add-auth-totp.sh`: Adds TOTP MFA extension if not added at install.
+- `add-xtra-quickconnect.sh`: Adds Quick Connect console extension if not added at install.
+- `add-xtra-histrecstore.sh`: Adds History Recorded Storage extension if not added at install.
+- `add-smtp-relay-o365.sh`: Sets up SMTP auth relay with O365 for backup messages, monitoring & alerts (BYO app password).
+- `add-tls-guac-daemon.sh`: Adds TLS wrapper for guacd server daemon to Guacamole client app internal traffic.
+- `add-fail2ban.sh`: Adds a fail2ban policy for brute force attack protection.
+- `backup-guacamole.sh`: A MySQL Guacamole backup script.
+- `upgrade-guac.sh`: Upgrades Guacamole, all installed extensions and the MySQL connector.
+- `branding.jar`: An example template for customising Guacamole's UI theme. Delete to keep the default UI.
+
+Happy Guacamole-ing! 😄🥑

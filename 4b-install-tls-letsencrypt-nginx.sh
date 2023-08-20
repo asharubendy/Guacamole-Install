@@ -1,11 +1,14 @@
 #!/bin/bash
 #######################################################################################################################
-# Add Let's Encrypt SSL Certificates to Guacamole with Nginx reverse proxy
+# Add Let's Encrypt TLS Certificates to Guacamole with Nginx reverse proxy
 # For Ubuntu / Debian / Raspbian
 # 4b of 4
 # David Harrop
 # April 2023
 #######################################################################################################################
+
+# If run as standalone and not from the main installer script, check the below variables are correct.
+# To run standalone: sudo ./4b-install-tls-letsencrypt-nginx.sh
 
 # Prepare text output colours
 GREY='\033[0;37m'
@@ -16,66 +19,30 @@ LGREEN='\033[0;92m'
 LYELLOW='\033[0;93m'
 NC='\033[0m' #No Colour
 
+TOMCAT_VERSION=$(ls /etc/ | grep tomcat)
+# Below variables are automatically updated by the 1-setup.sh script with the respective values given at install (manually update if blank)
+DOWNLOAD_DIR=
+PROXY_SITE=
+GUAC_URL=
+LE_DNS_NAME=
+LE_EMAIL=
+INSTALL_LOG=
+
 echo
 echo
-echo -e "${LGREEN}Installing Let's Encrypt SSL configuration for Nginx...${GREY}"
+echo -e "${LGREEN}Installing Let's Encrypt TLS configuration for Nginx...${GREY}"
 echo
-
-#######################################################################################################################
-# If you wish to add/regenerate self signed SSL to a pre-existing Nginx install, this script can be adapted to be run
-# standalone. To run as standalone, simply un-comment this entire section and provide the desired variable
-# values to complete the reconfiguration of Nginx.
-
-# Variable inputs
-#TOMCAT_VERSION="tomcat9" # Not be needed for genreral SSL install SSL (i.e. where Guacamole not present)
-#DOWNLOAD_DIR=$(eval echo ~${SUDO_USER})
-#LOG_LOCATION="${DOWNLOAD_DIR}/ssl_install.log"
-#GUAC_URL=http://localhost:8080/guacamole/ # substitute for whatever url that nginx is proxying
-
-# Find the existing nginx site name
-#echo -e "${GREY}Discovering exising proxy sites to configure with SSL...${GREY}"
-#for file in "/etc/nginx/sites-enabled"/*
-#do
-#PROXY_SITE="${file##*/}"
-#done
-#if [ $? -ne 0 ]; then
-#	echo -e "${LRED}Failed. See ${LOG_LOCATION}${GREY}" 1>&2
-#	exit 1
-#	else
-#	echo -e "${LGREEN}OK${GREY}"
-#fi
-#echo
-# Prompt for the FQDN of the new Let's encrypt certificate
-#while true
-#do
-#echo -e "${LGREEN}"
-#read -p "Enter the public FQDN for your proxy site: " LE_DNS_NAME
-#echo
-# [ "${LE_DNS_NAME}" != "" ] && break
-#done
-
-# Prompt for the admin/webmaster email for Let's encrypt certificate notifications
-#while true
-#do
-#echo -e "${LGREEN}"
-#read -p "Enter the email address for Let's Encrypt notifications : " LE_EMAIL
-#echo
-# [ "${LE_EMAIL}" != "" ] && break
-#done
-#echo -e "${GREY}"
-
-#######################################################################################################################
 
 # Install nginx
-apt-get update -qq &>>${LOG_LOCATION}
-apt-get install nginx certbot python3-certbot-nginx -qq -y &>>${LOG_LOCATION}
+apt-get update -qq &>>${INSTALL_LOG}
+apt-get install nginx certbot python3-certbot-nginx -qq -y &>>${INSTALL_LOG}
 
 # Backup the current Nginx config
 echo
 echo -e "${GREY}Backing up previous Nginx proxy to $DOWNLOAD_DIR/$PROXY_SITE-nginx.bak"
 cp /etc/nginx/sites-enabled/${PROXY_SITE} $DOWNLOAD_DIR/${PROXY_SITE}-nginx.bak
-if [ $? -ne 0 ]; then
-    echo -e "${LRED}Failed. See ${LOG_LOCATION}${GREY}" 1>&2
+if [[ $? -ne 0 ]]; then
+    echo -e "${LRED}Failed. See ${INSTALL_LOG}${GREY}" 1>&2
     exit 1
 else
     echo -e "${LGREEN}OK${GREY}"
@@ -83,7 +50,7 @@ else
 fi
 
 # Configure Nginx to accept the new certificates
-echo -e "${GREY}Configuring Nginx proxy for Let's Encrypt SSL and setting up automatic HTTP redirect...${GREY}"
+echo -e "${GREY}Configuring Nginx proxy for Let's Encrypt TLS and setting up automatic HTTP redirect...${GREY}"
 cat >/etc/nginx/sites-available/$PROXY_SITE <<EOL
 server {
     listen 80 default_server;
@@ -102,8 +69,8 @@ server {
     }
 }
 EOL
-if [ $? -ne 0 ]; then
-    echo -e "${LRED}Failed. See ${LOG_LOCATION}${GREY}" 1>&2
+if [[ $? -ne 0 ]]; then
+    echo -e "${LRED}Failed. See ${INSTALL_LOG}${GREY}" 1>&2
     exit 1
 else
     echo -e "${LGREEN}OK${GREY}"
@@ -112,29 +79,29 @@ fi
 
 # Update general ufw rules so force traffic via reverse proxy. Only Nginx and SSH will be available over the network.
 echo -e "${GREY}Updating firewall rules to allow only SSH and tcp 80/443..."
-sudo ufw default allow outgoing >/dev/null 2>&1
-sudo ufw default deny incoming >/dev/null 2>&1
-sudo ufw allow OpenSSH >/dev/null 2>&1
-sudo ufw allow 80/tcp >/dev/null 2>&1
-sudo ufw allow 443/tcp >/dev/null 2>&1
+ufw default allow outgoing >/dev/null 2>&1
+ufw default deny incoming >/dev/null 2>&1
+ufw allow OpenSSH >/dev/null 2>&1
+ufw allow 80/tcp >/dev/null 2>&1
+ufw allow 443/tcp >/dev/null 2>&1
 echo "y" | sudo ufw enable >/dev/null 2>&1
-if [ $? -ne 0 ]; then
-    echo -e "${LRED}Failed. See ${LOG_LOCATION}${GREY}" 1>&2
+if [[ $? -ne 0 ]]; then
+    echo -e "${LRED}Failed. See ${INSTALL_LOG}${GREY}" 1>&2
     exit 1
 else
     echo -e "${LGREEN}OK${GREY}"
     echo
 fi
 
-# Bounce Nginx to reload the new Nginx config so certbot config can continue
+# Reload the new Nginx config so as certbot can further ajust
 systemctl restart nginx
 
-# Run certbot to create and associate certificates with currenly public IP (must have tcp 80 and 443 open to work)
+# Run certbot to create and associate certificates with current public IP (must have tcp 80 and 443 open to work!)
 certbot --nginx -n -d $LE_DNS_NAME --email $LE_EMAIL --agree-tos --redirect --hsts
 echo -e
 echo -e "${GREY}Let's Encrypt successfully installed, but check for any errors above (DNS & firewall are the usual culprits).${GREY}"
-if [ $? -ne 0 ]; then
-    echo -e "${LRED}Failed. See ${LOG_LOCATION}${GREY}" 1>&2
+if [[ $? -ne 0 ]]; then
+    echo -e "${LRED}Failed. See ${INSTALL_LOG}${GREY}" 1>&2
     exit 1
 else
     echo -e "${LGREEN}OK${GREY}"
@@ -155,8 +122,8 @@ echo "${MINUTE} ${HOUR} * * * /usr/bin/certbot renew --quiet --pre-hook 'systemc
 # Overwrite old cron settings and cleanup
 crontab cron_1
 rm cron_1
-if [ $? -ne 0 ]; then
-    echo -e "${LRED}Failed. See ${LOG_LOCATION}${GREY}" 1>&2
+if [[ $? -ne 0 ]]; then
+    echo -e "${LRED}Failed. See ${INSTALL_LOG}${GREY}" 1>&2
     exit 1
 else
     echo -e "${LGREEN}OK${GREY}"
@@ -165,11 +132,11 @@ fi
 
 # Reload everything once again
 echo -e "${GREY}Restaring Guacamole & Ngnix..."
-sudo systemctl restart $TOMCAT_VERSION
-sudo systemctl restart guacd
-sudo systemctl restart nginx
-if [ $? -ne 0 ]; then
-    echo -e "${LRED}Failed. See ${LOG_LOCATION}${GREY}" 1>&2
+systemctl restart $TOMCAT_VERSION
+systemctl restart guacd
+systemctl restart nginx
+if [[ $? -ne 0 ]]; then
+    echo -e "${LRED}Failed. See ${INSTALL_LOG}${GREY}" 1>&2
     exit 1
 else
     echo -e "${LGREEN}OK${GREY}"

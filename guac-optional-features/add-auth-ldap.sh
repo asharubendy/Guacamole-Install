@@ -6,6 +6,8 @@
 # April 2023
 #######################################################################################################################
 
+# If run as standalone and not from the main installer script, check the below variables are correct.
+
 # Prepare text output colours
 GREY='\033[0;37m'
 DGREY='\033[0;90m'
@@ -17,11 +19,9 @@ NC='\033[0m' #No Colour
 
 clear
 
-# Check if user is root or sudo
-
-if ! [ $(id -u) = 0 ]; then
+if ! [[ $(id -u) = 0 ]]; then
     echo
-    echo -e "${LGREEN}Please run this script as sudo or root${NC}" 1>&2
+    echo -e "${LRED}Please run this script as sudo or root${NC}" 1>&2
     exit 1
 fi
 
@@ -49,6 +49,9 @@ esac
 echo
 wget -q --show-progress -O guacamole-auth-ldap-${GUAC_VERSION}.tar.gz ${GUAC_SOURCE_LINK}/binary/guacamole-auth-ldap-${GUAC_VERSION}.tar.gz
 tar -xzf guacamole-auth-ldap-${GUAC_VERSION}.tar.gz
+mv -f guacamole-auth-ldap-${GUAC_VERSION}/guacamole-auth-ldap-${GUAC_VERSION}.jar /etc/guacamole/extensions/
+chmod 664 /etc/guacamole/extensions/guacamole-auth-ldap-${GUAC_VERSION}.jar
+echo -e "${LGREEN}Installed guacamole-auth-ldap-${GUAC_VERSION}${GREY}"
 echo
 echo Adding the below config to /etc/guacamole/guacamole.properties
 cat <<EOF | sudo tee -a /etc/guacamole/guacamole.properties
@@ -64,10 +67,8 @@ ldap-user-search-filter:(objectClass=user)(!(objectCategory=computer))
 ldap-max-search-results:200
 EOF
 
-mv -f guacamole-auth-ldap-${GUAC_VERSION}/guacamole-auth-ldap-${GUAC_VERSION}.jar /etc/guacamole/extensions/
-sudo chmod 664 /etc/guacamole/extensions/guacamole-auth-ldap-${GUAC_VERSION}.jar
-sudo systemctl restart ${TOMCAT_VERSION}
-sudo systemctl restart guacd
+systemctl restart ${TOMCAT_VERSION}
+systemctl restart guacd
 
 rm -rf guacamole-*
 
