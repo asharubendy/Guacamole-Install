@@ -60,6 +60,7 @@ CERT_OU=
 PROXY_SITE=
 CERT_DAYS=
 DEFAULT_IP=
+RSA_KEYLENGTH=
 
 # Assume the values set the guacamole installer if the script is run without any command line options
 if [[ -z "$1" ]] | [[ -z "$2" ]] | [[ -z "$3" ]]; then
@@ -107,7 +108,7 @@ EOF
 echo
 # Create the new certificates
 echo "{$GREY}Creating a new TLS Certificate..."
-openssl req -x509 -nodes -newkey rsa:2048 -keyout $TLSNAME.key -out $TLSNAME.crt -days $TLSDAYS -config cert_attributes.txt
+openssl req -x509 -nodes -newkey rsa:$RSA_KEYLENGTH -keyout $TLSNAME.key -out $TLSNAME.crt -days $TLSDAYS -config cert_attributes.txt
 if [[ $? -ne 0 ]]; then
     echo -e "${LRED}Failed.${GREY}" 1>&2
     exit 1

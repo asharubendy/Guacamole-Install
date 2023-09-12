@@ -36,7 +36,6 @@ DIR_SSL_CERT="/etc/nginx/ssl/cert"
 DIR_SSL_KEY="/etc/nginx/ssl/private"
 
 TOMCAT_VERSION=$(ls /etc/ | grep tomcat)
-
 # Below variables are automatically updated by the 1-setup.sh script with the respective values given at install (manually update if blank)
 DOWNLOAD_DIR=
 CERT_COUNTRY=
@@ -49,6 +48,7 @@ INSTALL_LOG=
 PROXY_SITE=
 CERT_DAYS=
 DEFAULT_IP=
+RSA_KEYLENGTH=
 
 # Create a place to save the certs so we don't overwrite any earlier versions
 CERT_DIR_NAME=tls-certs-$(date +%y.%m.%d-%H_%M)
@@ -111,7 +111,7 @@ EOF
 
 echo
 echo "{$GREY}Creating a new Nginx TLS Certificate..."
-openssl req -x509 -nodes -newkey rsa:2048 -keyout $TLSNAME.key -out $TLSNAME.crt -days $TLSDAYS -config cert_attributes.txt
+openssl req -x509 -nodes -newkey rsa:$RSA_KEYLENGTH -keyout $TLSNAME.key -out $TLSNAME.crt -days $TLSDAYS -config cert_attributes.txt
 if [[ $? -ne 0 ]]; then
     echo -e "${LRED}Failed. See ${INSTALL_LOG}${GREY}" 1>&2
     exit 1
