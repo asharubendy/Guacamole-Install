@@ -15,24 +15,11 @@ LGREEN='\033[0;92m'
 LYELLOW='\033[0;93m'
 NC='\033[0m' #No Colour
 
-# Apply MySQL client or server packages, and don't clobber any pre-existing database installation accidentally
-if [[ "${INSTALL_MYSQL}" = true ]]; then
-    MYSQLPKG="${MYSQLSRV}"
-elif [ -x "$(command -v mysql)" ]; then
-     MYSQLPKG=""
-else
-    MYSQLPKG="${MYSQLCLIENT}"
-fi
-
-# Pre-seed MySQL root password values for Linux Distro default packages only
-if [[ "${INSTALL_MYSQL}" = true ]] && [[ -z "${MYSQL_VERSION}" ]]; then
-    debconf-set-selections <<<"mysql-server mysql-server/root_password password ${MYSQL_ROOT_PWD}"
-    debconf-set-selections <<<"mysql-server mysql-server/root_password_again password ${MYSQL_ROOT_PWD}"
-fi
 
 # Update everything but don't do the annoying prompts during apt installs
 echo -e "${GREY}Updating base Linux OS..."
 export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq &>>${INSTALL_LOG}
 apt-get upgrade -qq -y &>>${INSTALL_LOG}
 if [[ $? -ne 0 ]]; then
     echo -e "${LRED}Failed. See ${INSTALL_LOG}${GREY}" 1>&2
@@ -40,6 +27,12 @@ if [[ $? -ne 0 ]]; then
 else
     echo -e "${LGREEN}OK${GREY}"
     echo
+fi
+
+# Pre-seed MySQL root password values for Linux Distro default packages only
+if [[ "${INSTALL_MYSQL}" = true ]] && [[ -z "${MYSQL_VERSION}" ]]; then
+    debconf-set-selections <<<"mysql-server mysql-server/root_password password ${MYSQL_ROOT_PWD}"
+    debconf-set-selections <<<"mysql-server mysql-server/root_password_again password ${MYSQL_ROOT_PWD}"
 fi
 
 # Install official MariaDB repo and MariaDB version if a specific version number was provided.
