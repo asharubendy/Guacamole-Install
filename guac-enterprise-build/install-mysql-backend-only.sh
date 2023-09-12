@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################################################################
-# Guacamole MySQL backend install script. (For split DB and guacamole application layers.)
+# Guacamole MySQL backend install script. (For split DB and guacamole application layers.
 # For Ubuntu / Debian / Raspbian
 # David Harrop
 # September 2023
@@ -9,7 +9,7 @@
 # This script is for separating the Guacamole architecture into a scaled out three tiered system.
 # Layer 1 = DATABASE - This script
 # Layer 2 = GUAC SERVER & APPLICATION - use the main setup script, and select remote MYSQL DB option.
-# Layer 3 = FRONT END REV PROXY (Potentially load balanced & HA) - approach TBA
+# Layer 3 = FRONT END REV PROXY (Potentially load balanced & HA) - Up to you!
 
 #######################################################################################################################
 # Script pre-flight checks and settings ###############################################################################
@@ -75,8 +75,8 @@ echo
 # Setup options. ######################################################################################################
 #######################################################################################################################
 
-BACKEND_MYSQL="true"       # True: Allow $GUAC_USER remote login. False or "": Limits $GUAC_USER to localhost only login.
-FRONTEND_NET=""            # "" = allow login from any IP or wildcards e.g. 192.168.1.% (Needs BACKEND_SQL="true", else ignored)
+BACKEND_MYSQL="true"       # True: Allows $GUAC_USER remote login. False or blank: Limits $GUAC_USER to localhost only login.
+FRONTEND_NET=""            # IPs guac app can login from. Blank = any IP / wildcard 192.168.1.% (ignored if BACKEND_SQL="false")
 MYSQL_BIND_ADDR="0.0.0.0"  # Bind MySQL to this IP. (127.0.0.1, a specific IP or 0.0.0.0 for all interfaces)
 SECURE_MYSQL="true"        # Apply the mysql secure configuration tool (true/false)
 MYSQL_PORT="3306"          # Default is 3306
@@ -226,11 +226,10 @@ fi
 echo -e "${GREY}Setting up database access parameters for the Guacamole user ..."
 if [[ "${BACKEND_MYSQL}" = true ]] && [[ -z "${FRONTEND_NET}" ]]; then
     echo -e "${LYELLOW}${GUAC_USER} is set to accept db logins from any host, you may wish to limit this to specific IPs.${GREY}"
-    # e.g. RENAME USER '${GUAC_USER}'@'%' TO '${GUAC_USER}'@'xx.xx.xx.%';"
-    GUAC_USERHost="%" # Allow all IPs
+    GUAC_USERHost="%" # Allow guacamole access from all IPs where $FRONTEND_NET is left blank
 elif [[ "${BACKEND_MYSQL}" = true ]] && [[ -n "${FRONTEND_NET}" ]]; then
     echo -e "${LYELLOW}${GUAC_USER} is set to accept db logins from ${FRONTEND_NET}.${GREY}"
-    GUAC_USERHost="${FRONTEND_NET}" # Apply the given range
+    GUAC_USERHost="${FRONTEND_NET}" # Allow guacamole access from the given value in $FRONTEND_NET
 elif [[ "${BACKEND_MYSQL}" = false ]] || [[ -z "${BACKEND_MYSQL}" ]]; then
     echo -e "${LYELLOW}${GUAC_USER} is set to accept db logins from localhost only.${GREY}"
     GUAC_USERHost=localhost # Assume a localhost only install

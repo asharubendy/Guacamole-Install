@@ -61,8 +61,7 @@ TLSNAME=$1
 TLSDAYS=$2
 TLSIP=$3
 
-# Assume the values set the guacamole installer if the script is run without any command line options
-# Assume the values set the guacamole installer if the script is run without any command line options
+# Assume the values set the by the main installer if the script is run without any command line options
 if [[ -z "$1" ]] | [[ -z "$2" ]] | [[ -z "$3" ]]; then
     TLSNAME=$PROXY_SITE
     TLSDAYS=$CERT_DAYS
@@ -251,7 +250,7 @@ else
     echo
 fi
 
-# Hack to assist with displaying "$" symbols and " ' quotes in a (cut/paste-able) bash screen output format
+# A simple hack to display special characters in a cut & paste-able format directly to stdout.
 SHOWASTEXT1='$mypwd'
 SHOWASTEXT2='"Cert:\LocalMachine\Root"'
 

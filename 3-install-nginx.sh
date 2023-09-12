@@ -69,12 +69,12 @@ fi
 
 # Force nginx to require tls1.2 and above
 sed -i -e '/ssl_protocols/s/^/#/' /etc/nginx/nginx.conf
-sed -i "/SSL Settings/a \        ssl_protocols TLSv1.2 TLSv1.3; # Dropping SSLv3, ref: POODLE" /etc/nginx/nginx.conf
+sed -i "/SSL Settings/a \        ssl_protocols TLSv1.2 TLSv1.3;" /etc/nginx/nginx.conf
 
-# Symlink from sites-available to sites-enabled
+# Symlink new reverse proxy site config from sites-available to sites-enabled
 ln -s /etc/nginx/sites-available/$PROXY_SITE /etc/nginx/sites-enabled/
 
-# Make sure default Nginx site is unlinked
+# Make sure the default Nginx site is unlinked
 unlink /etc/nginx/sites-enabled/default
 
 # Do mandatory Nginx tweaks for logging actual client IPs through a proxy IP of 127.0.0.1 - DO NOT CHANGE COMMAND FORMATING!
@@ -90,7 +90,7 @@ fi
 
 # Allow large file transfers through Nginx
 sed -i '/client_max_body_size/d' /etc/nginx/nginx.conf  # remove this line if it already exists to prevent duplicates
-sed -i "/Basic Settings/a \        client_max_body_size 100000000M;" /etc/nginx/nginx.conf # Add the larger file transfer size
+sed -i "/Basic Settings/a \        client_max_body_size 1000000000M;" /etc/nginx/nginx.conf # Add larger file transfer size, should be enough!
 echo -e "${GREY}Boosting Nginx's 'maximum body size' parameter to allow large file transfers...${GREY}"
 if [[ $? -ne 0 ]]; then
     echo -e "${LRED}Failed. See ${INSTALL_LOG}${GREY}" 1>&2

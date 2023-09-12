@@ -34,8 +34,6 @@ GREYB='\033[1;37m'
 LRED='\033[0;91m'
 LGREEN='\033[0;92m'
 LYELLOW='\033[0;93m'
-LMAGENTA='\033[0;95m'
-LCYAN='\033[0;96m'
 NC='\033[0m' #No Colour
 
 # Make sure the user is NOT running this script as root
@@ -82,7 +80,7 @@ GUAC_VERSION="1.5.3"
 # MySQL Connector/J version to install
 MYSQLJCON="8.1.0"
 
-# Set preferred Apache CDN download link)
+# Set preferred Apache CDN download link
 GUAC_SOURCE_LINK="http://apache.org/dyn/closer.cgi?action=download&filename=guacamole/${GUAC_VERSION}"
 
 # See https://mariadb.org/mariadb/all-releases/ for available versions.
@@ -109,41 +107,42 @@ MYSQL_HOST=""                   # Blank or localhost for a local MySQL install, 
 MYSQL_PORT=""                   # If blank default is 3306
 GUAC_DB=""                      # If blank default is guacamole_db
 GUAC_USER=""                    # If blank default is guacamole_user
-MYSQL_ROOT_PWD=""               # Requires an entry here or at at script prompt.
-GUAC_PWD=""                     # Requires an entry here or at at script prompt.
+MYSQL_ROOT_PWD=""               # Requires an entry here or at script prompt.
+GUAC_PWD=""                     # Requires an entry here or at script prompt.
 DB_TZ=$(cat /etc/timezone)      # MySQL timezone default=(cat /etc/timezone) or change to "UTC" if required.
 INSTALL_TOTP=""                 # Add TOTP MFA extension (true/false)
 INSTALL_DUO=""                  # Add DUO MFA extension (can't be installed simultaneously with TOTP, true/false)
 INSTALL_LDAP=""                 # Add Active Directory extension (true/false)
 INSTALL_QCONNECT=""             # Add Guacamole console quick connect feature
 INSTALL_HISTREC=""              # Add Guacamole history recording storage feature
-HISTREC_PATH=""                 # If blank, sets Apache default /var/lib/guacamole/recordings
+HISTREC_PATH=""                 # If blank sets Apache default /var/lib/guacamole/recordings
 GUAC_URL_REDIR=""               # Redirect default Guacamole URL to http root (skip typing the extra "/guacamole" in the URL)
-INSTALL_NGINX=""                # Install and configure Guacamole behind Nginx reverse proxy (http port 80 only, true/false)
+INSTALL_NGINX=""                # Install and configure Nginx as a Guacamole reverse proxy (http port 80 only, true/false)
 PROXY_SITE=""                   # Local DNS name for reverse proxy and/or self signed TLS certificates
 SELF_SIGN=""                    # Add self signed TLS support to Nginx (Let's Encrypt not available with this option, true/false)
-CERT_COUNTRY="AU"               # Self signed cert setup: 2 country character code only, must not be blank
-CERT_STATE="Victoria"           # Self signed cert setup: Optional to change, must not be blank
-CERT_LOCATION="Melbourne"       # Self signed cert setup: Optional to change, must not be blank
-CERT_ORG="Itiligent"            # Self signed cert setup: Optional to change, must not be blank
-CERT_OU="I.T."                  # Self signed cert setup: Optional to change, must not be blank
-CERT_DAYS="3650"                # Self signed cert setup: Number of days until self signed certificate expiry
-LETS_ENCRYPT=""                 # Add Lets Encrypt public TLS cert for Nginx (self signed not available with this option, true/false)
+RSA_KEYLENGTH="2048"            # Self signed RSA TLS key length. At least 2048, must not be blank.
+CERT_COUNTRY="AU"               # Self signed cert setup, 2 character country code only, must not be blank.
+CERT_STATE="Victoria"           # Self signed cert setup, must not be blank
+CERT_LOCATION="Melbourne"       # Self signed cert setup, must not be blank
+CERT_ORG="Itiligent"            # Self signed cert setup, must not be blank
+CERT_OU="I.T."                  # Self signed cert setup, must not be blank
+CERT_DAYS="3650"                # Self signed cert setup, Number of days until self signed certificate expiry
+LETS_ENCRYPT=""                 # Add Lets Encrypt public TLS cert for Nginx (self signed not available with this option) true/false)
 LE_DNS_NAME=""                  # Public DNS name to bind with Lets Encrypt certificates
 LE_EMAIL=""                     # Webmaster/admin email for Lets Encrypt notifications
 BACKUP_EMAIL=""                 # Email address for backup notifications
 BACKUP_RETENTION="30"           # How many days to keep SQL backups locally for
-RDP_SHARE_HOST=""               # Custom Windows RDP share host name. (e.g. RDP_SHARE_LABEL on RDP_SHARE_HOST)
-RDP_SHARE_LABEL="RDP Share"     # Custom Windows RDP share drive label (e.g. RDP_SHARE_LABEL on RDP_SHARE_HOST)
-RDP_PRINTER_LABEL="RDP Printer" # Custom Windows RDP printer label
+RDP_SHARE_HOST=""               # Customise Windows RDP share host name. (e.g. RDP_SHARE_LABEL on RDP_SHARE_HOST)
+RDP_SHARE_LABEL="RDP Share"     # Customise Windows RDP share drive label (e.g. RDP_SHARE_LABEL on RDP_SHARE_HOST)
+RDP_PRINTER_LABEL="RDP Printer" # Customise Windows RDP printer label
 
 #######################################################################################################################
-# Download GitHub setup scripts. To prevent overwrite, COMMENT OUT LINES OF ANY SCRIPTS YOU HAVE EDITED. ##############
+# Download GitHub setup scripts. BEFORE RUNNING SETUP, COMMENT DOWNLOAD LINES OF SCRIPTS YOU HAVE EDITED ! ############
 #######################################################################################################################
 
 # Script branding header
 echo
-echo -e "${GREYB}Guacamole VDI & Jump Server Appliance Setup."
+echo -e "${GREYB}Guacamole ${GUAC_VERSION} Auto Installer."
 echo -e "              ${LGREEN}Powered by Itiligent"
 echo
 echo
@@ -155,6 +154,7 @@ wget -q --show-progress ${GITHUB}/2-install-guacamole.sh -O 2-install-guacamole.
 wget -q --show-progress ${GITHUB}/3-install-nginx.sh -O 3-install-nginx.sh
 wget -q --show-progress ${GITHUB}/4a-install-tls-self-signed-nginx.sh -O 4a-install-tls-self-signed-nginx.sh
 wget -q --show-progress ${GITHUB}/4b-install-tls-letsencrypt-nginx.sh -O 4b-install-tls-letsencrypt-nginx.sh
+
 # Download the Guacamole optional feature scripts
 wget -q --show-progress ${GITHUB}/guac-optional-features/add-auth-duo.sh -O add-auth-duo.sh
 wget -q --show-progress ${GITHUB}/guac-optional-features/add-auth-ldap.sh -O add-auth-ldap.sh
@@ -167,7 +167,7 @@ wget -q --show-progress ${GITHUB}/guac-optional-features/add-fail2ban.sh -O add-
 wget -q --show-progress ${GITHUB}/guac-management/backup-guac.sh -O backup-guac.sh
 wget -q --show-progress ${GITHUB}/guac-management/upgrade-guac.sh -O upgrade-guac.sh
 # wget -q --show-progress ${GITHUB}/guac-management/refresh-tls-self-signed.sh -O refresh-tls-self-signed.sh 
-# refresh-tls-self-signed.sh  is now functionally duplicated by the 4a-install-tls-self-signed-nginx.sh. Keeping it here for later conversion into a script for HA Proxy TLS options
+# refresh-tls-self-signed.sh is now functionally duplicated by the 4a-install-tls-self-signed-nginx.sh. Keeping it here for later conversion into a script for HA Proxy TLS options
 
 # Download the (customisable) dark theme & branding template
 wget -q --show-progress ${GITHUB}/branding.jar -O branding.jar
@@ -177,12 +177,12 @@ chmod +x *.sh
 echo -e "${LYELLOW}Ctrl+Z now to exit now if you wish to customise 1-setup.sh options or to setup an unattended install."
 echo
 
-#######################################################################################################################
-# Logic for determining desired packages between distros & database options. Modify as Linux distros diverge ##########
-#######################################################################################################################
-
-# First lets trigger a sudo prompt to cache the admin credentials needed for the next installer steps
+# Trigger the above pause with a sudo prompt, this also doubles as where we grab admin credentials for the next installer steps
 sudo apt-get update -qq &>>${INSTALL_LOG}
+
+#######################################################################################################################
+# Logic for determining package dependencies between distros & database options. MODIFY ONLY IF NEEDED ################
+#######################################################################################################################
 
 # Standardise the language used for distro versions
 source /etc/os-release
@@ -222,12 +222,12 @@ if [[ -z "${MYSQL_VERSION}" ]]; then
     # Use Linux distro default version.
     MYSQLSRV="default-mysql-server default-mysql-client mysql-common" # Server
     MYSQLCLIENT="default-mysql-client" # Client
-    DB_CMD="mysql" # mysql command is depricated
+    DB_CMD="mysql" # The mysql command is depricated on some versions, option to substitute another.
 else
     # Use official mariadb.org repo
     MYSQLSRV="mariadb-server mariadb-client mariadb-common" # Server
     MYSQLCLIENT="mariadb-client" # Client
-    DB_CMD="mariadb" # mysql command is depricated on newer versions
+    DB_CMD="mariadb" # The mysql command is depricated on some versions, option to substitute another.
 fi
 # Standardise differing dependency package names and add any extra distro repositories for these if needed
 # Current package names for various distros are referenced at https://guacamole.apache.org/doc/gug/installing-guacamole.html
@@ -412,7 +412,7 @@ if [[ -z "${MYSQL_ROOT_PWD}" ]] && [[ "${INSTALL_MYSQL}" = true ]]; then
         read -s -p "SQL: Confirm ${MYSQL_HOST}'s MySQL ROOT password: " PROMPT2
         echo
         [[ "${MYSQL_ROOT_PWD}" = "${PROMPT2}" ]] && [[ "${MYSQL_ROOT_PWD}" != "" ]] && [[ "${PROMPT2}" != "" ]] && break
-        echo -e "${LRED}Passwords don't match or can't be null. Please try again.${LMAGENTA}" 1>&2
+        echo -e "${LRED}Passwords don't match or can't be null. Please try again.${GREY}" 1>&2
     done
 fi
 
@@ -424,7 +424,7 @@ if [[ -z "${GUAC_PWD}" ]]; then
         read -s -p "SQL: Confirm ${MYSQL_HOST}'s MySQL ${GUAC_USER} password: " PROMPT2
         echo
         [[ "${GUAC_PWD}" = "${PROMPT2}" ]] && [[ "${GUAC_PWD}" != "" ]] && [[ "${PROMPT2}" != "" ]] && break
-        echo -e "${LRED}Passwords don't match or can't be null. Please try again.${LCYAN}" 1>&2
+        echo -e "${LRED}Passwords don't match or can't be null. Please try again.${GREY}" 1>&2
     done
 fi
 
@@ -501,7 +501,7 @@ fi
 
 # Prompt the user to install the History Recorded Storage feature
 if [[ -z "${INSTALL_HISTREC}" ]]; then
-    echo -e -n "${GREY}EXTRAS: Install History Recorded Storage (session replay console integration) [y/N] [default n]: "
+    echo -e -n "${GREY}EXTRAS: Install History Recorded Storage feature [y/N] [default n]: "
     read PROMPT
     if [[ ${PROMPT} =~ ^[Yy]$ ]]; then
         INSTALL_HISTREC=true
@@ -621,7 +621,7 @@ fi
 
 clear
 echo
-echo -e "${GREYB}Guacamole VDI & Jump Server Appliance Setup."
+echo -e "${GREYB}Guacamole ${GUAC_VERSION} Auto Installer."
 echo -e "              ${LGREEN}Powered by Itiligent"
 echo
 echo
@@ -629,7 +629,7 @@ echo
 echo -e "${LGREEN}Beginning Guacamole setup...${GREY}"
 echo
 
-echo -e "${GREY}Synchronising the install script suite with selected settings for later standalone use..."
+echo -e "${GREY}Synchronising the install script suite with installation settings..."
 # Sync the various manual config scripts with the relevant variables selected at install
 # This way scripts can be run at a later time without modification to match the original install
 sed -i "s|MYSQL_HOST=|MYSQL_HOST='${MYSQL_HOST}'|g" $DOWNLOAD_DIR/backup-guac.sh
@@ -672,7 +672,7 @@ sed -i "s|GUAC_URL=|GUAC_URL='${GUAC_URL}'|g" $DOWNLOAD_DIR/4a-install-tls-self-
 sed -i "s|INSTALL_LOG=|INSTALL_LOG='${INSTALL_LOG}'|g" $DOWNLOAD_DIR/4a-install-tls-self-signed-nginx.sh
 sed -i "s|DEFAULT_IP=|DEFAULT_IP='${DEFAULT_IP}'|g" $DOWNLOAD_DIR/4a-install-tls-self-signed-nginx.sh
 
-# refresh-tls-self-signed.sh  is now functionally duplicated by the 4a-install-tls-self-signed-nginx.sh. Keeping it here for later conversion into a script for HA Proxy TLS options
+# refresh-tls-self-signed.sh is now functionally duplicated by the 4a-install-tls-self-signed-nginx.sh. Keeping it here for later conversion into a script for HA Proxy TLS options
 #sed -i "s|CERT_COUNTRY=|CERT_COUNTRY='${CERT_COUNTRY}'|g" $DOWNLOAD_DIR/refresh-tls-self-signed.sh
 #sed -i "s|CERT_STATE=|CERT_STATE='${CERT_STATE}'|g" $DOWNLOAD_DIR/refresh-tls-self-signed.sh
 #sed -i "s|CERT_LOCATION=|CERT_LOCATION='${CERT_LOCATION}'|g" $DOWNLOAD_DIR/refresh-tls-self-signed.sh
@@ -746,7 +746,7 @@ export RDP_PRINTER_LABEL="${RDP_PRINTER_LABEL}"
 export LOCAL_DOMAIN=$LOCAL_DOMAIN
 
 # Run the Guacamole install script
-sudo -E ./2-install-guacamole.sh
+sudo -E ./2-install-guacamole.sh # Using -E to keep all exported variables and outputs within the current shell
 if [[ $? -ne 0 ]]; then
     echo -e "${LRED}2-install-guacamole.sh FAILED. See ${INSTALL_LOG}${GREY}" 1>&2
     exit 1
@@ -773,20 +773,21 @@ rm cron_1
 
 # Install Nginx reverse proxy front end to Guacamole if option is selected
 if [[ "${INSTALL_NGINX}" = true ]]; then
-    sudo -E ./3-install-nginx.sh
+    sudo -E ./3-install-nginx.sh # Using -E to keep all exported variables and outputs within the current shell
     echo -e "${LGREEN}Nginx install complete\nhttp://${PROXY_SITE} - admin login: guacadmin pass: guacadmin\n${LYELLOW}***Be sure to change the password***${GREY}"
 fi
 
 # Apply self signed TLS certificates to Nginx reverse proxy if option is selected
 if [[ "${INSTALL_NGINX}" = true ]] && [[ "${SELF_SIGN}" = true ]]; then
+    # Using -E to keep all exported variables and outputs within the current shell
     sudo -E ./4a-install-tls-self-signed-nginx.sh ${PROXY_SITE} ${CERT_DAYS} ${DEFAULT_IP} | tee -a ${INSTALL_LOG}
-    echo -e "${LGREEN}Self signed certificate configured for Nginx \n${LYELLOW}https:${LGREEN}//${PROXY_SITE} - admin login: guacadmin pass: guacadmin\n${LYELLOW}***Be sure to change the password***${GREY}"
+    echo -e "${LGREEN}Self signed certificate configured for Nginx \n${LYELLOW}https:${LGREEN}//${PROXY_SITE}  - login user/pass: guacadmin/guacadmin\n${LYELLOW}***Be sure to change the password***${GREY}"
 fi
 
 # Apply Let's Encrypt TLS certificates to Nginx reverse proxy if option is selected
 if [[ "${INSTALL_NGINX}" = true ]] && [[ "${LETS_ENCRYPT}" = true ]]; then
-    sudo -E ./4b-install-tls-letsencrypt-nginx.sh
-    echo -e "${LGREEN}Let's Encrypt TLS configured for Nginx \n${LYELLOW}https:${LGREEN}//${LE_DNS_NAME} - admin login: guacadmin pass: guacadmin\n${LYELLOW}***Be sure to change the password***${GREY}"
+    sudo -E ./4b-install-tls-letsencrypt-nginx.sh # Using -E to keep all exported variables and outputs within the current shell
+    echo -e "${LGREEN}Let's Encrypt TLS configured for Nginx \n${LYELLOW}https:${LGREEN}//${LE_DNS_NAME}  - login user/pass: guacadmin/guacadmin\n${LYELLOW}***Be sure to change the password***${GREY}"
 fi
 
 # Duo Settings reminder - If Duo is selected you can't login to Guacamole until this extension is fully configured
@@ -803,7 +804,7 @@ if [[ $INSTALL_LDAP == "true" ]]; then
     echo -e "See https://guacamole.apache.org/doc/gug/ldap-auth.html"
 fi
 
-# Tidy up. (Installer and Nginx scripts can't be run again or standalone without modification, so removing.)
+# Tidy up
 mv $USER_HOME_DIR/1-setup.sh $DOWNLOAD_DIR
 apt-get -y autoremove &>>${INSTALL_LOG}
 

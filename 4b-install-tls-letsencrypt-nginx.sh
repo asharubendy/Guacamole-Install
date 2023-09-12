@@ -8,7 +8,7 @@
 #######################################################################################################################
 
 # If run as standalone and not from the main installer script, check the below variables are correct.
-# To run standalone: sudo ./4b-install-tls-letsencrypt-nginx.sh
+# To run standalone: sudo -E ./4b-install-tls-letsencrypt-nginx.sh
 
 # Prepare text output colours
 GREY='\033[0;37m'
@@ -77,7 +77,7 @@ else
     echo
 fi
 
-# Update general ufw rules so force traffic via reverse proxy. Only Nginx and SSH will be available over the network.
+# Update general ufw rules to force traffic via reverse proxy. Only Nginx and SSH will be available over the network.
 echo -e "${GREY}Updating firewall rules to allow only SSH and tcp 80/443..."
 ufw default allow outgoing >/dev/null 2>&1
 ufw default deny incoming >/dev/null 2>&1
@@ -93,7 +93,7 @@ else
     echo
 fi
 
-# Reload the new Nginx config so as certbot can further ajust
+# Reload the new Nginx config so as certbot can read the new config and update it
 systemctl restart nginx
 
 # Run certbot to create and associate certificates with current public IP (must have tcp 80 and 443 open to work!)
@@ -108,8 +108,8 @@ else
     echo
 fi
 
-# Select a random daily time to schedule a daily check for Let's Encrypt certificates due to expire in next 30 days.
-# If are any due to expire within a 30 day window, Certbot will attempt to renew automatically renew.
+# Select a random daily time to schedule a daily check for a Let's Encrypt certificate due to expire in next 30 days.
+# If due to expire within a 30 day window, certbot will attempt to renew automatically renew each day.
 echo -e "${GREY}Scheduling automatic certificate renewals for certificates with < 30 days till expiry.)${GREY}"
 #Dump out the current crontab
 crontab -l >cron_1
@@ -131,7 +131,7 @@ else
 fi
 
 # Reload everything once again
-echo -e "${GREY}Restaring Guacamole & Ngnix..."
+echo -e "${GREY}Restarting Guacamole & Ngnix..."
 systemctl restart $TOMCAT_VERSION
 systemctl restart guacd
 systemctl restart nginx

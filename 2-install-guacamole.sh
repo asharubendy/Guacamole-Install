@@ -58,9 +58,19 @@ if [[ -n "${MYSQL_VERSION}" ]]; then
     fi
 fi
 
-# Install Guacamole build dependencies.
+# Select the appropriate MySQL client or server packages, and don't clobber any pre-existing database installation accidentally
+if [[ "${INSTALL_MYSQL}" = true ]]; then
+    MYSQLPKG="${MYSQLSRV}"
+elif [ -x "$(command -v ${DB_CMD})" ]; then
+     MYSQLPKG=""
+else
+    MYSQLPKG="${MYSQLCLIENT}"
+fi
+
+# Install Guacamole build dependencies (pwgen needed for duo config only, expect is auto removed after install)
 echo -e "${GREY}Installing dependencies required for building Guacamole, this might take a few minutes..."
-apt-get -qq -y install ${MYSQLPKG} ${TOMCAT_VERSION} ${JPEGTURBO} ${LIBPNG} ufw pwgen wget expect \
+apt-get update -qq >/dev/null
+apt-get -qq -y install ${MYSQLPKG} ${TOMCAT_VERSION} ${JPEGTURBO} ${LIBPNG} ufw pwgen expect \
     build-essential libcairo2-dev libtool-bin uuid-dev libavcodec-dev libavformat-dev libavutil-dev \
     libswscale-dev freerdp2-dev libpango1.0-dev libssh2-1-dev libtelnet-dev libvncserver-dev libwebsockets-dev \
     libpulse-dev libssl-dev libvorbis-dev libwebp-dev ghostscript &>>${INSTALL_LOG}
@@ -103,7 +113,7 @@ if [[ $? -ne 0 ]]; then
     echo -e "${GUAC_SOURCE_LINK}/binary/guacamole-${GUAC_VERSION}.war${GREY}"
     exit 1
 else
-    echo -e "${LGREEN}Downloaded guacamole-${GUAC_VERSION}.war (Guacamole client)${GREY}"
+    echo -e "${LGREEN}Downloaded guacamole-${GUAC_VERSION}.war${GREY}"
 fi
 
 # Download MySQL connector/j
@@ -117,7 +127,7 @@ else
     echo -e "${LGREEN}Downloaded mysql-connector-j-${MYSQLJCON}.tar.gz${GREY}"
 fi
 
-# Download Guacamole authentication extensions
+# Download Guacamole database auth extension
 wget -q --show-progress -O guacamole-auth-jdbc-${GUAC_VERSION}.tar.gz ${GUAC_SOURCE_LINK}/binary/guacamole-auth-jdbc-${GUAC_VERSION}.tar.gz
 if [[ $? -ne 0 ]]; then
     echo -e "${LRED}Failed to download guacamole-auth-jdbc-${GUAC_VERSION}.tar.gz" 1>&2
@@ -128,7 +138,7 @@ else
     echo -e "${LGREEN}Downloaded guacamole-auth-jdbc-${GUAC_VERSION}.tar.gz${GREY}"
 fi
 
-# Download TOTP extension
+# Download TOTP auth extension
 if [[ "${INSTALL_TOTP}" = true ]]; then
     wget -q --show-progress -O guacamole-auth-totp-${GUAC_VERSION}.tar.gz ${GUAC_SOURCE_LINK}/binary/guacamole-auth-totp-${GUAC_VERSION}.tar.gz
     if [[ $? -ne 0 ]]; then
@@ -141,7 +151,7 @@ if [[ "${INSTALL_TOTP}" = true ]]; then
     fi
 fi
 
-# Download DUO extension
+# Download DUO auth extension
 if [[ "${INSTALL_DUO}" = true ]]; then
     wget -q --show-progress -O guacamole-auth-duo-${GUAC_VERSION}.tar.gz ${GUAC_SOURCE_LINK}/binary/guacamole-auth-duo-${GUAC_VERSION}.tar.gz
     if [[ $? -ne 0 ]]; then
@@ -154,7 +164,7 @@ if [[ "${INSTALL_DUO}" = true ]]; then
     fi
 fi
 
-# Download LDAP extension
+# Download LDAP auth extension
 if [[ "${INSTALL_LDAP}" = true ]]; then
     wget -q --show-progress -O guacamole-auth-ldap-${GUAC_VERSION}.tar.gz ${GUAC_SOURCE_LINK}/binary/guacamole-auth-ldap-${GUAC_VERSION}.tar.gz
     if [[ $? -ne 0 ]]; then
@@ -428,7 +438,7 @@ fi
 # Set Tomcat to start at boot
 systemctl enable ${TOMCAT_VERSION}
 
-# Begin the MySQL database config if this is a local MYSQL install only.
+# Begin the MySQL database config if only if a local MYSQL install.
 if [[ "${INSTALL_MYSQL}" = true ]]; then
     # Set MySQL password
     export MYSQL_PWD=${MYSQL_ROOT_PWD}
@@ -491,8 +501,10 @@ ALTER USER 'root'@'localhost' IDENTIFIED BY '$MYSQL_ROOT_PWD';"
 
     # This should stay as localhost in most local MySQL install situations. This setting determines from WHERE the new ${GUAC_USER}
     # will be able to login to the database (either from specific remote IPs or from localhost only.)
-    #  However this setting can be a quick and hacky way to build a backend guacamole database server for use behind another guac application server, albeit with the full application suite installed). To do this, set GUAC_USERHost="%" for login access from all IPs, (or e.g. 192.168.1.% for an IP range.)
-    # You will also need to set the MySQL binding away from the default 127.0.0.1 to 0.0.0.0 or a specific external facing network interface to allow remote login.
+    # However this setting can be a quick and hacky way to build a backend guacamole database server for use behind another guacamole
+    # application server, albeit with the full application suite installed). To do this, set GUAC_USERHost="%" for login access 
+    # from all IPs, (or e.g. 192.168.1.% for an IP range.) You will also need to set the MySQL binding away from the default 
+    # 127.0.0.1 to 0.0.0.0 or a specific external facing network interface to allow remote login.
     if [[ "${MYSQL_HOST}" != "localhost" ]]; then
         GUAC_USERHost="%"
         echo -e "${LYELLOW}${GUAC_USER} is set to accept db logins from any host, you may wish to limit this to specific IPs.${GREY}"
@@ -508,7 +520,7 @@ CREATE DATABASE IF NOT EXISTS ${GUAC_DB};
 CREATE USER IF NOT EXISTS '${GUAC_USER}'@'${GUAC_USERHost}' IDENTIFIED BY \"${GUAC_PWD}\";
 GRANT SELECT,INSERT,UPDATE,DELETE ON ${GUAC_DB}.* TO '${GUAC_USER}'@'${GUAC_USERHost}';
 FLUSH PRIVILEGES;"
-    echo ${SQLCODE} | mysql -u root -D mysql -h ${MYSQL_HOST} -P ${MYSQL_PORT}
+    echo ${SQLCODE} | $DB_CMD -u root -D mysql -h ${MYSQL_HOST} -P ${MYSQL_PORT}
     if [[ $? -ne 0 ]]; then
         echo -e "${LRED}Failed${GREY}" 1>&2
         exit 1
