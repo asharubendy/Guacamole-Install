@@ -537,15 +537,22 @@ if [[ -z ${INSTALL_NGINX} ]]; then
     fi
 fi
 
-# Prompt to remove the trailing /guacamole dir from the default front end url
-if [[ "${INSTALL_NGINX}" = false ]]; then
-    echo -e -n "FRONT END: Redirect the Tomcat http root url to /guacamole [Y/n]? [default y]: "
+# Prompt to remove the trailing /guacamole dir from the default front end url. Don't redirect if using reverse proxy
+if [[ -z ${GUAC_URL_REDIR} ]] && [[ "${INSTALL_NGINX}" = false ]]; then
+    echo -e -n "FRONT END: Redirect the Guacamole server's http root to /guacamole [y/N]? [default n]: "
     read PROMPT
-    if [[ ${PROMPT} =~ ^[Nn]$ ]]; then
-        GUAC_URL_REDIR=false
-    else
+    if [[ ${PROMPT} =~ ^[Yy]$ ]]; then
         GUAC_URL_REDIR=true
+    else
+        GUAC_URL_REDIR=false
     fi
+fi
+
+# Checking the redirect logic with unattended installs, if not explicitly set correctly, set to false
+if [[ -z ${GUAC_URL_REDIR} ]] && [[ "${INSTALL_NGINX}" = true ]]; then
+    GUAC_URL_REDIR=false 
+  elif [[ -z ${GUAC_URL_REDIR} ]]; then
+    GUAC_URL_REDIR=false
 fi
 
 # We must assign a DNS name for the new proxy site
@@ -571,6 +578,7 @@ if [[ -z ${SELF_SIGN} ]] && [[ "${INSTALL_NGINX}" = true ]]; then
     read PROMPT
     if [[ ${PROMPT} =~ ^[Yy]$ ]]; then
         SELF_SIGN=true
+        LETS_ENCRYPT=false
     else
         SELF_SIGN=false
     fi
@@ -587,18 +595,19 @@ if [[ -z "${CERT_DAYS}" ]]; then
 fi
 
 # Prompt for Let's Encrypt TLS reverse proxy configuration option
-if [[ -z ${LETS_ENCRYPT} ]] && [[ "${INSTALL_NGINX}" = true ]] && [[ "${SELF_SIGN}" = "false" ]]; then
+if [[ -z ${LETS_ENCRYPT} ]] && [[ "${INSTALL_NGINX}" = true ]] && [[ "${SELF_SIGN}" = false ]]; then
     echo -e -n "FRONT END: Add Let's Encrypt TLS support to Nginx reverse proxy [y/N] [default n]: ${GREY}"
     read PROMPT
     if [[ ${PROMPT} =~ ^[Yy]$ ]]; then
         LETS_ENCRYPT=true
+        SELF_SIGN=false
     else
         LETS_ENCRYPT=false
     fi
 fi
 
 # Prompt for Let's Encrypt public dns name
-if [[ -z ${LE_DNS_NAME} ]] && [[ "${LETS_ENCRYPT}" = true ]]; then
+if [[ -z ${LE_DNS_NAME} ]] && [[ "${LETS_ENCRYPT}" = true ]] && [[ "${SELF_SIGN}" = false ]]; then
     while true; do
         read -p "FRONT END: Enter the PUBLIC FQDN for your proxy site : " LE_DNS_NAME
         [[ "${LE_DNS_NAME}" != "" ]] && break
@@ -607,7 +616,7 @@ if [[ -z ${LE_DNS_NAME} ]] && [[ "${LETS_ENCRYPT}" = true ]]; then
 fi
 
 # Prompt for Let's Encrypt admin email
-if [[ -z ${LE_EMAIL} ]] && [[ "${LETS_ENCRYPT}" = true ]]; then
+if [[ -z ${LE_EMAIL} ]] && [[ "${LETS_ENCRYPT}" = true ]] && [[ "${SELF_SIGN}" = false ]]; then
     while true; do
         read -p "FRONT END: Enter the email address for Let's Encrypt notifications : " LE_EMAIL
         [[ "${LE_EMAIL}" != "" ]] && break
@@ -747,6 +756,7 @@ export RDP_SHARE_HOST="${RDP_SHARE_HOST}"
 export RDP_SHARE_LABEL="${RDP_SHARE_LABEL}"
 export RDP_PRINTER_LABEL="${RDP_PRINTER_LABEL}"
 export LOCAL_DOMAIN=$LOCAL_DOMAIN
+export DOMAIN_SUFFIX=$DOMAIN_SUFFIX
 
 # Run the Guacamole install script
 sudo -E ./2-install-guacamole.sh # Using -E to keep all exported variables and outputs within the current shell
@@ -781,14 +791,14 @@ if [[ "${INSTALL_NGINX}" = true ]]; then
 fi
 
 # Apply self signed TLS certificates to Nginx reverse proxy if option is selected
-if [[ "${INSTALL_NGINX}" = true ]] && [[ "${SELF_SIGN}" = true ]]; then
+if [[ "${INSTALL_NGINX}" = true ]] && [[ "${SELF_SIGN}" = true ]] && [[ "${LETS_ENCRYPT}" != true ]]; then
     # Using -E to keep all exported variables and outputs within the current shell
-    sudo -E ./4a-install-tls-self-signed-nginx.sh ${PROXY_SITE} ${CERT_DAYS} ${DEFAULT_IP} | tee -a ${INSTALL_LOG}
+    sudo -E ./4a-install-tls-self-signed-nginx.sh ${PROXY_SITE} ${CERT_DAYS} ${DEFAULT_IP} | tee -a ${INSTALL_LOG} # Logged to capture client cert import instructions
     echo -e "${LGREEN}Self signed certificate configured for Nginx \n${LYELLOW}https:${LGREEN}//${PROXY_SITE}  - login user/pass: guacadmin/guacadmin\n${LYELLOW}***Be sure to change the password***${GREY}"
 fi
 
 # Apply Let's Encrypt TLS certificates to Nginx reverse proxy if option is selected
-if [[ "${INSTALL_NGINX}" = true ]] && [[ "${LETS_ENCRYPT}" = true ]]; then
+if [[ "${INSTALL_NGINX}" = true ]] && [[ "${LETS_ENCRYPT}" = true ]] && [[ "${SELF_SIGN}" != true ]]; then
     sudo -E ./4b-install-tls-letsencrypt-nginx.sh # Using -E to keep all exported variables and outputs within the current shell
     echo -e "${LGREEN}Let's Encrypt TLS configured for Nginx \n${LYELLOW}https:${LGREEN}//${LE_DNS_NAME}  - login user/pass: guacadmin/guacadmin\n${LYELLOW}***Be sure to change the password***${GREY}"
 fi
