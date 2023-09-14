@@ -178,7 +178,7 @@ echo -e "${LYELLOW}Ctrl+Z now to exit now if you wish to customise 1-setup.sh op
 echo
 
 # Trigger the above pause with a sudo prompt, this also doubles as where we grab admin credentials for the next installer steps
-sudo apt-get update -qq &>>${INSTALL_LOG}
+sudo apt-get update -qq >/dev/null
 
 #######################################################################################################################
 # Logic for determining package dependencies between distros & database options. MODIFY ONLY IF NEEDED ################

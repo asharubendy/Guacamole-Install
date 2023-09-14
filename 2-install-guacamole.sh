@@ -19,7 +19,7 @@ NC='\033[0m' #No Colour
 # Update everything but don't do the annoying prompts during apt installs
 echo -e "${GREY}Updating base Linux OS..."
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq &>>${INSTALL_LOG}
+apt-get update -qq >/dev/null
 apt-get upgrade -qq -y &>>${INSTALL_LOG}
 if [[ $? -ne 0 ]]; then
     echo -e "${LRED}Failed. See ${INSTALL_LOG}${GREY}" 1>&2
