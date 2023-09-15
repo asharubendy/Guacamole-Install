@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################################################################
-# Add self signed TLS certificates to Guacamole with Nginx reverse proxy
+# Add self-signed TLS certificates to Guacamole with Nginx reverse proxy
 # For Ubuntu / Debian / Raspbian
 # 4a of 4
 # David Harrop
@@ -10,10 +10,10 @@
 # This script can be run multiple times to either install or update TLS settings and certificates.
 
 # Change the name of the site or add/renew TLS certs by specifying command line arguments [dns.name] [cert-lifetime] [IP]
-# e.g. sudo  -E ./4a-install-tls-self-signed-nginx.sh proxy.domain.local 365 192.168.1.50
+# e.g. sudo -E ./4a-install-tls-self-signed-nginx.sh proxy.domain.local 365 192.168.1.50
 
 # Alternatively, run the script without any command arguments and the default variables below will apply
-# e.g. sudo - E ./4a-install-tls-self-signed-nginx.sh
+# e.g. sudo -E ./4a-install-tls-self-signed-nginx.sh
 
 # Prepare text output colours
 GREY='\033[0;37m'
@@ -61,8 +61,8 @@ TLSNAME=$1
 TLSDAYS=$2
 TLSIP=$3
 
-# Assume the values set the by the main installer if the script is run without any command line options
-if [[ -z "$1" ]] | [[ -z "$2" ]] | [[ -z "$3" ]]; then
+# Assume the values set by the main installer if the script is run without any command line options
+if [[ -z "$1" ]] || [[ -z "$2" ]] || [[ -z "$3" ]]; then
     TLSNAME=$PROXY_SITE
     TLSDAYS=$CERT_DAYS
     TLSIP=$DEFAULT_IP
@@ -70,7 +70,7 @@ fi
 
 echo
 echo
-echo -e "${LGREEN}Setting up self signed TLS certificates for Nginx...${GREY}"
+echo -e "${LGREEN}Setting up self-signed TLS certificates for Nginx...${GREY}"
 echo
 
 # Make directories to place TLS Certificate if they don't exist
@@ -82,7 +82,7 @@ if [[ ! -d $DIR_SSL_CERT ]]; then
     mkdir -p $DIR_SSL_CERT
 fi
 
-echo -e "${GREY}New self signed TLS certificate attributes are shown below...${DGREY}"
+echo -e "${GREY}New self-signed TLS certificate attributes are shown below...${DGREY}"
 # Display the new TLS cert parameters.
 cat <<EOF | tee cert_attributes.txt
 [req]
@@ -97,7 +97,7 @@ ST                  = $CERT_STATE
 L                   = $CERT_LOCATION
 O                   = $CERT_ORG
 OU                  = $CERT_OU
-CN                  = $TLSNAME
+CN                  = *.$(echo $TLSNAME | cut -d. -f2-)
 
 [v3_req]
 keyUsage            = nonRepudiation, digitalSignature, keyEncipherment
@@ -106,11 +106,12 @@ subjectAltName      = @alt_names
 
 [alt_names]
 DNS.1               = $TLSNAME
+DNS.2               = *.$(echo $TLSNAME | cut -d. -f2-)
 IP.1                = $TLSIP
 EOF
 
 echo
-echo "{$GREY}Creating a new Nginx TLS Certificate..."
+echo -e "${GREY}Creating a new Nginx TLS Certificate..."
 openssl req -x509 -nodes -newkey rsa:$RSA_KEYLENGTH -keyout $TLSNAME.key -out $TLSNAME.crt -days $TLSDAYS -config cert_attributes.txt
 if [[ $? -ne 0 ]]; then
     echo -e "${LRED}Failed. See ${INSTALL_LOG}${GREY}" 1>&2
@@ -153,12 +154,11 @@ fi
 fi
 
 # Update Nginx config to accept the new certificates
-echo -e "${GREY}Configuring Nginx proxy to use the self signed TLS certificate and setting up HTTP redirect...${DGREY}"
+echo -e "${GREY}Configuring Nginx proxy to use the self-signed TLS certificate and setting up HTTP redirect...${DGREY}"
 cat <<EOF | tee /etc/nginx/sites-available/$TLSNAME
 server {
-    #listen 80 default_server;
     root /var/www/html;
-    index index.html index.htm index.nginx-debian.html;
+    index index.html index.htm;
     server_name $TLSNAME;
     location / {
         proxy_pass $GUAC_URL;
@@ -179,7 +179,7 @@ server {
     return 301 https://\$host\$request_uri;
     listen 80 default_server;
     root /var/www/html;
-    index index.html index.htm index.nginx-debian.html;
+    index index.html index.htm;
     server_name $TLSNAME;
     location / {
         proxy_pass $GUAC_URL;
@@ -257,7 +257,7 @@ SHOWASTEXT2='"Cert:\LocalMachine\Root"'
 printf "${GREY}+-------------------------------------------------------------------------------------------------------------
 ${LGREEN}+ WINDOWS CLIENT SELF SIGNED TLS BROWSER CONFIG - SAVE THIS BEFORE CONTINUING!${GREY}
 +
-+ 1. In ${DOWNLOAD_DIR} is a Windows version of the new certificate ${LYELLOW}$TLSNAME.pfx${GREY}
++ 1. In $CERT_DIR is a Windows version of the new certificate ${LYELLOW}$TLSNAME.pfx${GREY}
 + 2. Import this PFX file into your Windows client with the below PowerShell commands (as Administrator):
 \n"
 echo -e "${SHOWASTEXT1} = ConvertTo-SecureString -String "1234" -Force -AsPlainText"
@@ -265,7 +265,7 @@ echo -e "Import-pfxCertificate -FilePath $TLSNAME.pfx -Password "${SHOWASTEXT1}"
 printf "${GREY}+-------------------------------------------------------------------------------------------------------------
 ${LGREEN}+ LINUX CLIENT SELF SIGNED TLS BROWSER CONFIG - SAVE THIS BEFORE CONTINUING!${GREY}
 +
-+ 1. In ${DOWNLOAD_DIR} is a new Linux native OpenSSL certificate ${LYELLOW}$TLSNAME.crt${GREY}
++ 1. In $CERT_DIR is a new Linux native OpenSSL certificate ${LYELLOW}$TLSNAME.crt${GREY}
 + 2. Import the CRT file into your Linux client certificate store with the below command:
 \n"
 echo -e "(If certutil is not installed, run apt-get install libnss3-tools)"

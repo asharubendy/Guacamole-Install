@@ -37,7 +37,7 @@ echo
 
 # Create a place to save the certs so we don't overwrite any earlier versions
 USER_HOME_DIR=$(eval echo ~${SUDO_USER})
-CERT_DIR_NAME=tls-certs-$(date +%y.%m.%d-%H_%M)
+CERT_DIR_NAME=tls-certs-$(date +%y.%m.%d)
 CERT_DIR=$USER_HOME_DIR/guac-setup/$CERT_DIR_NAME
 mkdir -p $CERT_DIR
 cd $CERT_DIR
@@ -62,8 +62,8 @@ CERT_DAYS=
 DEFAULT_IP=
 RSA_KEYLENGTH=
 
-# Assume the values set the guacamole installer if the script is run without any command line options
-if [[ -z "$1" ]] | [[ -z "$2" ]] | [[ -z "$3" ]]; then
+# Assume the values set by the main installer if the script is run without any command line options
+if [[ -z "$1" ]] || [[ -z "$2" ]] || [[ -z "$3" ]]; then
     TLSNAME=$PROXY_SITE
     TLSDAYS=$CERT_DAYS
     TLSIP=$DEFAULT_IP
@@ -93,7 +93,7 @@ ST                  = $CERT_STATE
 L                   = $CERT_LOCATION
 O                   = $CERT_ORG
 OU                  = $CERT_OU
-CN                  = $TLSNAME
+CN                  = *.$(echo $TLSNAME | cut -d. -f2-)
 
 [v3_req]
 keyUsage            = nonRepudiation, digitalSignature, keyEncipherment
@@ -102,12 +102,13 @@ subjectAltName      = @alt_names
 
 [alt_names]
 DNS.1               = $TLSNAME
+DNS.2               = *.$(echo $TLSNAME | cut -d. -f2-)
 IP.1                = $TLSIP
 EOF
 
 echo
 # Create the new certificates
-echo "{$GREY}Creating a new TLS Certificate..."
+echo -e "${GREY}Creating a new TLS Certificate..."
 openssl req -x509 -nodes -newkey rsa:$RSA_KEYLENGTH -keyout $TLSNAME.key -out $TLSNAME.crt -days $TLSDAYS -config cert_attributes.txt
 if [[ $? -ne 0 ]]; then
     echo -e "${LRED}Failed.${GREY}" 1>&2
@@ -133,7 +134,7 @@ else
 fi
 
 # Change of permissions so certs can be copied via WinSCP.
-chown -R $SUDO_USER:root $WORKING_DIR
+chown -R $SUDO_USER:root $CERT_DIR
 
 # Reload everything
 echo -e "${GREY}New certificate created, restating Guacamole & Ngnix..."
@@ -156,7 +157,7 @@ SHOWASTEXT2='"Cert:\LocalMachine\Root"'
 printf "${GREY}+-------------------------------------------------------------------------------------------------------------
 ${LGREEN}+ WINDOWS CLIENT SELF SIGNED TLS BROWSER CONFIG - SAVE THIS BEFORE CONTINUING!${GREY}
 +
-+ 1. In ${WORKING_DIR} is a Windows version of the new certificate ${LYELLOW}$TLSNAME.pfx${GREY}
++ 1. In ${CERT_DIR} is a Windows version of the new certificate ${LYELLOW}$TLSNAME.pfx${GREY}
 + 2. Import this PFX file into your Windows client with the below Powershell commands (as Administrator):
 \n"
 echo -e "${SHOWASTEXT1} = ConvertTo-SecureString -String "1234" -Force -AsPlainText"
@@ -164,7 +165,7 @@ echo -e "Import-pfxCertificate -FilePath $TLSNAME.pfx -Password "${SHOWASTEXT1}"
 printf "${GREY}+-------------------------------------------------------------------------------------------------------------
 ${LGREEN}+ LINUX CLIENT SELF SIGNED TLS BROWSER CONFIG - SAVE THIS BEFORE CONTINUING!${GREY}
 +
-+ 1. In ${WORKING_DIR} is a new Linux native OpenSSL certificate ${LYELLOW}$TLSNAME.crt${GREY}
++ 1. In ${CERT_DIR} is a new Linux native OpenSSL certificate ${LYELLOW}$TLSNAME.crt${GREY}
 + 2. Import the CRT file into your Linux client certificate store with the below command:
 \n"
 echo -e "(If certutil is not installed, run apt-get install libnss3-tools)"
