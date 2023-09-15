@@ -45,8 +45,6 @@ echo -e "${GREY}Configuring Nginx as a reverse proxy for Guacamole's Apache Tomc
 cat <<EOF | tee /etc/nginx/sites-available/$PROXY_SITE
 server {
     listen 80 default_server;
-    root /var/www/html;
-    index index.html index.htm index.nginx-debian.html;
     server_name $GUAC_URL;
     location / {
         proxy_pass $GUAC_URL;

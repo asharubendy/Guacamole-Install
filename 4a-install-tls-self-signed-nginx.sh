@@ -51,7 +51,7 @@ DEFAULT_IP=
 RSA_KEYLENGTH=
 
 # Create a place to save the certs so we don't overwrite any earlier versions
-CERT_DIR_NAME=tls-certs-$(date +%y.%m.%d-%H_%M)
+CERT_DIR_NAME=tls-certs-$(date +%y.%m.%d)
 CERT_DIR=$DOWNLOAD_DIR/$CERT_DIR_NAME
 mkdir -p $CERT_DIR
 cd $CERT_DIR
@@ -126,7 +126,7 @@ cp $TLSNAME.key $DIR_SSL_KEY/$TLSNAME.key
 cp $TLSNAME.crt $DIR_SSL_CERT/$TLSNAME.crt
 
 # Create a PFX formatted key for easier import to Windows hosts
-echo -e "${GREY}Converting client certificates for Windows & Linux...${GREY}"
+echo -e "${GREY}Converting client certificate to Windows pfx format...${GREY}"
 openssl pkcs12 -export -out $TLSNAME.pfx -inkey $TLSNAME.key -in $TLSNAME.crt -password pass:1234
 if [[ $? -ne 0 ]]; then
     echo -e "${LRED}Failed. See ${INSTALL_LOG}${GREY}" 1>&2
@@ -157,9 +157,9 @@ fi
 echo -e "${GREY}Configuring Nginx proxy to use the self-signed TLS certificate and setting up HTTP redirect...${DGREY}"
 cat <<EOF | tee /etc/nginx/sites-available/$TLSNAME
 server {
-    root /var/www/html;
-    index index.html index.htm;
-    server_name $TLSNAME;
+    # HTTPS site
+    listen 443 ssl;
+    server_name _;
     location / {
         proxy_pass $GUAC_URL;
         proxy_buffering off;
@@ -169,29 +169,21 @@ server {
         proxy_set_header Connection \$http_connection;
         access_log off;
     }
-    listen 443 ssl;
     ssl_certificate      /etc/nginx/ssl/cert/$TLSNAME.crt;
     ssl_certificate_key  /etc/nginx/ssl/private/$TLSNAME.key;
     ssl_session_cache shared:SSL:1m;
     ssl_session_timeout  5m;
 }
+
 server {
-    return 301 https://\$host\$request_uri;
+    # Redirect all other traffic to the HTTPS site
     listen 80 default_server;
-    root /var/www/html;
-    index index.html index.htm;
-    server_name $TLSNAME;
     location / {
-        proxy_pass $GUAC_URL;
-        proxy_buffering off;
-        proxy_http_version 1.1;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection \$http_connection;
-        access_log off;
+        return 301 https://\$host\$request_uri;
     }
 }
 EOF
+
 if [[ $? -ne 0 ]]; then
     echo -e "${LRED}Failed. See ${INSTALL_LOG}${GREY}" 1>&2
     exit 1
@@ -202,7 +194,7 @@ fi
 
 # Find all enabled sites containing the $GUAC_URL and remove them to avoid conflicts
 for x in /etc/nginx/sites-enabled/*; do
-    # Check inside each site candidate to see if the $GUAC_URL exists.
+    # Check inside each enabled site to see if the $GUAC_URL exists.
     if [[ -f "${x}" ]]; then
         if grep -qE "${GUAC_URL}" "${x}"; then
             found_sites+=("${x}")
