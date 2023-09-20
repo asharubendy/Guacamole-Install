@@ -75,9 +75,9 @@ echo
 # Setup options. ######################################################################################################
 #######################################################################################################################
 
-BACKEND_MYSQL="true"       # True: Allows $GUAC_USER remote login. False or blank: Limits $GUAC_USER to localhost only login.
-FRONTEND_NET=""            # IPs guac app can login from. Blank = any IP / wildcard 192.168.1.% (ignored if BACKEND_SQL="false")
-MYSQL_BIND_ADDR="0.0.0.0"  # Bind MySQL to this IP. (127.0.0.1, a specific IP or 0.0.0.0 for all interfaces)
+BACKEND_MYSQL="true"       # True: For separated MySQL layer. False/blank: Add MySQL to existing guac server (replace XML user map)
+FRONTEND_NET=""            # IPs guac server can login from. Blank = any IP or wildcard 192.168.1.% (ignored if BACKEND_SQL="false")
+MYSQL_BIND_ADDR="0.0.0.0"  # Binds MySQL instance to this IP. (127.0.0.1, a specific IP or 0.0.0.0) (ignored if BACKEND_SQL="false")
 SECURE_MYSQL="true"        # Apply the mysql secure configuration tool (true/false)
 MYSQL_PORT="3306"          # Default is 3306
 GUAC_DB="guacamole_db"     # Default is guacamole_db
@@ -211,17 +211,6 @@ else
     echo
 fi
 
-# Set the MySQL binding IP address to whatever the setup variable is set to.
-echo -e "${GREY}Setting MySQL IP address binding to ${MYSQL_BIND_ADDR}..."
-sed -i "s/^bind-address[[:space:]]*=[[:space:]]*.*/bind-address = ${MYSQL_BIND_ADDR}/g" ${mysqlconfig}
-if [[ $? -ne 0 ]]; then
-    echo -e "${LRED}Failed${GREY}" 1>&2
-    exit 1
-else
-    echo -e "${LGREEN}OK${GREY}"
-    echo
-fi
-
 # Establish the appropriate form of Guacamole user account access (remote or localhost login permissions)
 echo -e "${GREY}Setting up database access parameters for the Guacamole user ..."
 if [[ "${BACKEND_MYSQL}" = true ]] && [[ -z "${FRONTEND_NET}" ]]; then
@@ -233,10 +222,22 @@ elif [[ "${BACKEND_MYSQL}" = true ]] && [[ -n "${FRONTEND_NET}" ]]; then
 elif [[ "${BACKEND_MYSQL}" = false ]] || [[ -z "${BACKEND_MYSQL}" ]]; then
     echo -e "${LYELLOW}${GUAC_USER} is set to accept db logins from localhost only.${GREY}"
     GUAC_USERHost=localhost # Assume a localhost only install
+    MYSQL_BIND_ADDR="127.0.0.1"
 else
     echo -e "${LYELLOW}${GUAC_USER} is set to accept db logins from localhost only.${GREY}"
     GUAC_USERHost=localhost # Assume a localhost only install
 fi
+if [[ $? -ne 0 ]]; then
+    echo -e "${LRED}Failed${GREY}" 1>&2
+    exit 1
+else
+    echo -e "${LGREEN}OK${GREY}"
+    echo
+fi
+
+# Set the MySQL binding IP address according to setup variables given.
+echo -e "${GREY}Setting MySQL IP address binding to ${MYSQL_BIND_ADDR}..."
+sed -i "s/^bind-address[[:space:]]*=[[:space:]]*.*/bind-address = ${MYSQL_BIND_ADDR}/g" ${mysqlconfig}
 if [[ $? -ne 0 ]]; then
     echo -e "${LRED}Failed${GREY}" 1>&2
     exit 1
