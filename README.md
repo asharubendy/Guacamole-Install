@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/GitHub-GPL--3.0-informational.svg" alt="License">
 </p>
 
-This suite of build and management scripts makes setting and operating Guacamole a breeze. Its got installer support for TLS reverse proxy, Active Directory integration, multi-factor authentication, Quick Connect & History Recording Storage UI enhancements, dark mode and custom UI templates, auto database backup, O365 email alerts, internal daemon security hardening options and even a fail2ban policy for defence against brute force attacks. There's also code in here to get you up and running with an enterprise deployment approach near identical to [Amazon's Guacmole Bastion Cluster](http://netcubed-ami.s3-website-us-east-1.amazonaws.com/guaws/v2.3.1/cluster/), if that's your thing!
+This suite of build and management scripts makes setting and operating Guacamole a breeze. Its got installer support for TLS reverse proxy (self sign or LetsEncrypt), Active Directory integration, multi-factor authentication, Quick Connect & History Recording Storage UI enhancements, dark mode & a custom UI theme creation template, auto database backup, O365 email alerts, internal daemon security hardening options and even a fail2ban policy for defence against brute force attacks. There's also code in here to get you up and running with an enterprise deployment approach near identical to [Amazon's Guacmole Bastion Cluster](http://netcubed-ami.s3-website-us-east-1.amazonaws.com/guaws/v2.3.1/cluster/), if that's your thing!
 
 ## Automatic Installation
 
@@ -13,7 +13,8 @@ This suite of build and management scripts makes setting and operating Guacamole
 ```shell
 wget https://raw.githubusercontent.com/itiligent/Guacamole-Install/main/1-setup.sh && chmod +x 1-setup.sh && ./1-setup.sh
 ```
-*For highly customised & branded installations into Docker images, unattended installation options are available. See below.*
+## Docker Image Creation
+For customised & branded Docker builds, unattended installation options are available. Read on...
 
 ## Prerequisites (Yes! Debian 12 is now supported!)
 
@@ -85,11 +86,11 @@ wget https://raw.githubusercontent.com/itiligent/Guacamole-Install/main/1-setup.
 
 <img src="https://github.githubassets.com/images/icons/emoji/unicode/1f454.png" width="35"> For Enterprise (or custom Docker) deployments, did you know that Guacamole can be run in a load balanced farm with physical/logical separation between TLS, application and database layers? To achieve this, the MySQL, Gucamole and Nginx front end components are typically split into 3 systems or containers. (VLANs & firewalls between these layers helps greatly with security too.)
 
- A simple benefit of using a separate MySQL backend server or container means you can upgrade and test whilst keeping all your data and connection profiles intact. Just point this installer or a fresh application container to your MySQL instance and immediately all your connection profiles and settings are right there!
+ A simple benefit of using a separate MySQL backend server or container means you can upgrade and test whilst keeping all your data and connection profiles intact. Just point this installer (or point a fresh Docker application container) to your MySQL instance and immediately all your connection profiles and settings are right there!
 
 - **For the DATABASE layer:** Find the included  `install-mysql-backend-only.sh` [here](https://github.com/itiligent/Guacamole-Install/tree/main/guac-enterprise-build) to install a standalone instance of the Guacamole MySQL database for your backend.
 - **For the APPLICATION layer:** Simply use the main setup script to build as many application servers as you like, just use the main installer to point new installations to the remote backend database, making sure to **say no to both the "Install MySQL locally" option and any proxy install options**.
-- **For the Front end**: There are so many choices available that are already very well documented. You could even take the (portable) Nginx scripts to build a separate TLS front end layer. Be aware that [HA Proxy](https://www.haproxy.org/) generally provides far superior session persistence/affinity under load balanced conditions [when compared to Open Source Nginx](https://www.nginx.com/products/nginx/compare-models/) as only Nginx Plus subscribers get all the proper load balancing stuff!
+- **For the Front end**: There are so many choices available that are already very well documented. You could even use the Nginx scripts to build a separate TLS front end layer. Be aware that [HA Proxy](https://www.haproxy.org/) generally provides far superior session persistence/affinity under load balanced conditions [when compared to Open Source Nginx](https://www.nginx.com/products/nginx/compare-models/) as only Nginx Plus subscribers get all the proper load balancing stuff!
 
 
 ### Installer script download manifest
