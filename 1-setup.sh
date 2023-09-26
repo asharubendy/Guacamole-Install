@@ -99,25 +99,25 @@ INSTALL_LOG="${DOWNLOAD_DIR}/guacamole_setup.log"
 #######################################################################################################################
 # Silent setup options - true/false or specific values below prevents prompt at install. EDIT TO SUIT #################
 #######################################################################################################################
-SERVER_NAME=""                  # Preferred server hostname
+SERVER_NAME="controlnode"                  # Preferred server hostname
 LOCAL_DOMAIN=""                 # Local DNS space in use
-INSTALL_MYSQL=""                # Install locally (true/false)
-SECURE_MYSQL=""                 # Apply mysql secure configuration tool (true/false)
+INSTALL_MYSQL="true"                # Install locally (true/false)
+SECURE_MYSQL="true"                 # Apply mysql secure configuration tool (true/false)
 MYSQL_HOST=""                   # Blank or localhost for a local MySQL install, a specific IP for remote MySQL option.
 MYSQL_PORT=""                   # If blank default is 3306
 GUAC_DB=""                      # If blank default is guacamole_db
 GUAC_USER=""                    # If blank default is guacamole_user
-MYSQL_ROOT_PWD=""               # Requires an entry here or at script prompt.
+MYSQL_ROOT_PWD="ZA2fX7yB2GzCEeUaeLyq"               # Requires an entry here or at script prompt.
 GUAC_PWD=""                     # Requires an entry here or at script prompt.
 DB_TZ=$(cat /etc/timezone)      # MySQL timezone default=(cat /etc/timezone) or change to "UTC" if required.
-INSTALL_TOTP=""                 # Add TOTP MFA extension (true/false)
-INSTALL_DUO=""                  # Add DUO MFA extension (can't be installed simultaneously with TOTP, true/false)
-INSTALL_LDAP=""                 # Add Active Directory extension (true/false)
-INSTALL_QCONNECT=""             # Add Guacamole console quick connect feature
-INSTALL_HISTREC=""              # Add Guacamole history recording storage feature
+INSTALL_TOTP="false"                 # Add TOTP MFA extension (true/false)
+INSTALL_DUO="false"                  # Add DUO MFA extension (can't be installed simultaneously with TOTP, true/false)
+INSTALL_LDAP="false"                 # Add Active Directory extension (true/false)
+INSTALL_QCONNECT="true"             # Add Guacamole console quick connect feature
+INSTALL_HISTREC="false"              # Add Guacamole history recording storage feature
 HISTREC_PATH=""                 # If blank sets Apache default /var/lib/guacamole/recordings
-GUAC_URL_REDIR=""               # Redirect default Guacamole URL to http root (skip typing the extra "/guacamole" in the URL)
-INSTALL_NGINX=""                # Install and configure Nginx as a Guacamole reverse proxy (http port 80 only, true/false)
+GUAC_URL_REDIR="true"               # Redirect default Guacamole URL to http root (skip typing the extra "/guacamole" in the URL)
+INSTALL_NGINX="false"                # Install and configure Nginx as a Guacamole reverse proxy (http port 80 only, true/false)
 PROXY_SITE=""                   # Local DNS name for reverse proxy and/or self signed TLS certificates
 SELF_SIGN=""                    # Add self signed TLS support to Nginx (Let's Encrypt not available with this option, true/false)
 RSA_KEYLENGTH="2048"            # Self signed RSA TLS key length. At least 2048, must not be blank.
