@@ -72,7 +72,7 @@ mkdir -p $DOWNLOAD_DIR
 mkdir -p $DB_BACKUP_DIR
 
 # GitHub download branch
-GITHUB="https://raw.githubusercontent.com/itiligent/Guacamole-Install/main"
+GITHUB="https://raw.githubusercontent.com/asharubendy/Guacamole-Install/main"
 
 # Version of Guacamole to install
 GUAC_VERSION="1.5.3"
@@ -99,16 +99,16 @@ INSTALL_LOG="${DOWNLOAD_DIR}/guacamole_setup.log"
 #######################################################################################################################
 # Silent setup options - true/false or specific values below prevents prompt at install. EDIT TO SUIT #################
 #######################################################################################################################
-SERVER_NAME="controlnode"                  # Preferred server hostname
-LOCAL_DOMAIN=""                 # Local DNS space in use
+SERVER_NAME="theFatController"                  # Preferred server hostname
+LOCAL_DOMAIN="theFatController"                 # Local DNS space in use
 INSTALL_MYSQL="true"                # Install locally (true/false)
 SECURE_MYSQL="true"                 # Apply mysql secure configuration tool (true/false)
-MYSQL_HOST=""                   # Blank or localhost for a local MySQL install, a specific IP for remote MySQL option.
-MYSQL_PORT=""                   # If blank default is 3306
-GUAC_DB=""                      # If blank default is guacamole_db
-GUAC_USER=""                    # If blank default is guacamole_user
+MYSQL_HOST="localhost"                   # Blank or localhost for a local MySQL install, a specific IP for remote MySQL option.
+MYSQL_PORT="3306"                   # If blank default is 3306
+GUAC_DB="guacamole_db"                      # If blank default is guacamole_db
+GUAC_USER="guacamole_user"                    # If blank default is guacamole_user
 MYSQL_ROOT_PWD="ZA2fX7yB2GzCEeUaeLyq"               # Requires an entry here or at script prompt.
-GUAC_PWD=""                     # Requires an entry here or at script prompt.
+GUAC_PWD="Q2w1MrTXuYZQhuv1bz9K"                     # Requires an entry here or at script prompt.
 DB_TZ=$(cat /etc/timezone)      # MySQL timezone default=(cat /etc/timezone) or change to "UTC" if required.
 INSTALL_TOTP="false"                 # Add TOTP MFA extension (true/false)
 INSTALL_DUO="false"                  # Add DUO MFA extension (can't be installed simultaneously with TOTP, true/false)
@@ -121,9 +121,9 @@ INSTALL_NGINX="false"                # Install and configure Nginx as a Guacamol
 PROXY_SITE=""                   # Local DNS name for reverse proxy and/or self signed TLS certificates
 SELF_SIGN=""                    # Add self signed TLS support to Nginx (Let's Encrypt not available with this option, true/false)
 RSA_KEYLENGTH="2048"            # Self signed RSA TLS key length. At least 2048, must not be blank.
-CERT_COUNTRY="AU"               # Self signed cert setup, 2 character country code only, must not be blank.
-CERT_STATE="Victoria"           # Self signed cert setup, must not be blank
-CERT_LOCATION="Melbourne"       # Self signed cert setup, must not be blank
+CERT_COUNTRY="GB"               # Self signed cert setup, 2 character country code only, must not be blank.
+CERT_STATE="Somerset"           # Self signed cert setup, must not be blank
+CERT_LOCATION="London"       # Self signed cert setup, must not be blank
 CERT_ORG="Itiligent"            # Self signed cert setup, must not be blank
 CERT_OU="I.T."                  # Self signed cert setup, must not be blank
 CERT_DAYS="3650"                # Self signed cert setup, Number of days until self signed certificate expiry

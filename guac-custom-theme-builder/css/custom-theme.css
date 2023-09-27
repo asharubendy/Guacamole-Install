@@ -19,10 +19,10 @@ pre {
 }
 
 a[href]:visited {
-    color: #88bf5b;
+    color: #8f5bbf;
 }
 a[href] {
-    color: #88bf5b;
+    color: #8f5bbf;
 }
 
 div.location,
@@ -118,7 +118,7 @@ button.danger {
 
 /* Home */
 .recent-connections .connection:hover {
-    background-color: #88bf5b;
+    background-color: #8f5bbf;
 }
 
 .menu-dropdown .menu-contents {
@@ -128,14 +128,14 @@ button.danger {
     color: #ececec;
 }
 .menu-dropdown .menu-contents li a:hover {
-    background-color: #88bf5b;
+    background-color: #8f5bbf;
 }
 
 .list-item.selected {
-    background: #88bf5b
+    background: #8f5bbf
 }
 .list-item:not(.selected) .caption:hover {
-    background-color: #88bf5b;
+    background-color: #8f5bbf;
 }
 .list-item .name {
     color: #ececec;
@@ -189,14 +189,14 @@ button.danger {
 }
 .page-tabs .page-list li a[href]:hover,
 .section-tabs li a:hover {
-    background-color: #88bf5b;
+    background-color: #8f5bbf;
 }
 .page-tabs .page-list li a[href]:visited {
     color: #ececec;
 }
 
 .settings table.session-list tr.session:hover {
-    background-color: #88bf5b;
+    background-color: #8f5bbf;
 }
 
 .location-chooser .dropdown {
@@ -204,7 +204,7 @@ button.danger {
 }
 
 .settings.connectionHistory a.history-session-recording {
-    color: #88bf5b;
+    color: #8f5bbf;
 }
 
 .settings.connectionHistory a.history-session-recording:after {
@@ -236,10 +236,10 @@ button.danger {
 }
 
 #filesystem-menu .header.breadcrumbs .breadcrumb:hover {
-    background-color: #88bf5b;
+    background-color: #8f5bbf;
 }
 
 #guac-menu #zoom-out:hover,
 #guac-menu #zoom-in:hover {
-    background-color: #88bf5b;
+    background-color: #8f5bbf;
 }
